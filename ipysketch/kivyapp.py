@@ -226,6 +226,7 @@ class SketchCanvasWidget(BoxLayout):
         for line in lines_to_remove:
             self.canvas.remove(line)
             self.sketch.paths.remove(self.line_path_map[line])
+            del self.line_path_map[line]
 
     def save(self, basename):
         self.sketch.save(basename)

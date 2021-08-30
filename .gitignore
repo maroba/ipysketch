@@ -129,3 +129,10 @@ dmypy.json
 
 _version_save.py
 .idea
+
+*.ipynb
+./*.png
+
+*.isk
+
+dev/

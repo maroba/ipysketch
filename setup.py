@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 author = 'Matthias Baer'
 email = 'matthias.r.baer@googlemail.com'
-description = 'Package for handwriting and sketching in Jupyter cells'
+description = 'Handwriting and sketching in Jupyter notebooks'
 name = 'ipysketch'
 year = '2021'
 url = 'https://github.com/maroba/ipysketch'
