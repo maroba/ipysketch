@@ -9,6 +9,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.slider import Slider
 
+from kivy.graphics.instructions import InstructionGroup
+
 from skimage.io import imread, imsave, imshow
 
 from ipysketch.model import SketchModel, Path
@@ -37,6 +39,13 @@ def pack_points(points):
     for i in range(0, len(points), 2):
         packed.append((points[i], points[i+1]))
     return packed
+
+
+class CustomInstructionGroup(InstructionGroup):
+    def get_line(self):
+        for child in self.children:
+            if isinstance(child, CustomLine):
+                return child
 
 
 class CustomLine(Line):
@@ -179,15 +188,18 @@ class SketchCanvasWidget(BoxLayout):
 
             line_width = self.parent.toolbar.line_width_slider.value
 
+            group = CustomInstructionGroup()
+
             touch.ud['path'] = path = Path(line_width)
             path.add_point(touch.x, touch.y)
 
-            with self.canvas:
-                self.canvas.add(Color(0, 0, 0))
-                line = CustomLine(points=(touch.x, touch.y), width=line_width)
-                self.line_path_map[line] = path
-                line
-                touch.ud['line'] = line
+            group.add(Color(0, 0, 0))
+            line = CustomLine(points=(touch.x, touch.y), width=line_width)
+            group.add(line)
+            self.canvas.add(group)
+            touch.ud['group'] = group
+            touch.ud['line'] = line
+            self.line_path_map[group] = path
 
         else:
             eraser_radius = 10
@@ -218,15 +230,18 @@ class SketchCanvasWidget(BoxLayout):
 
     def remove_paths_at(self, circle):
         lines_to_remove = []
-        for line in self.canvas.children:
-            if isinstance(line, CustomLine):
+        groups_to_remove = []
+        for group in self.canvas.children:
+            if isinstance(group, CustomInstructionGroup):
+                line = group.get_line()
                 if line.collides_with_circle(circle):
                     lines_to_remove.append(line)
+                    groups_to_remove.append(group)
 
-        for line in lines_to_remove:
-            self.canvas.remove(line)
-            self.sketch.paths.remove(self.line_path_map[line])
-            del self.line_path_map[line]
+        for line, group in zip(lines_to_remove, groups_to_remove):
+            self.sketch.paths.remove(self.line_path_map[group])
+            del self.line_path_map[group]
+            self.canvas.remove(group)
 
     def save(self, basename):
         self.sketch.save(basename)
@@ -235,12 +250,13 @@ class SketchCanvasWidget(BoxLayout):
         self.sketch.load(file_name)
         color = (0, 0, 0)
 
-        with self.canvas:
-            Color(*color)
-            for path in self.sketch.paths:
-                line = CustomLine(points=path.points_flattened(), width=path.line_width)
-                line
-                self.line_path_map[line] = path
+        for path in self.sketch.paths:
+            group = CustomInstructionGroup()
+            group.add(Color(*color))
+            line = CustomLine(points=path.points_flattened(), width=path.line_width)
+            group.add(line)
+            self.canvas.add(group)
+            self.line_path_map[group] = path
 
     def clear(self):
         self.sketch.clear()
