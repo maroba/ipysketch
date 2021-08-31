@@ -135,7 +135,7 @@ class SketchApp(object):
         self.model = SketchModel(name)
 
         root = Tk()
-
+        root.title('ipysketch: ' + name)
         root.columnconfigure(0, weight=1)
         root.rowconfigure(1, weight=1)
         root.geometry('1024x768+200+200')

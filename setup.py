@@ -9,7 +9,7 @@ description = 'Handwriting and sketching in Jupyter notebooks'
 name = 'ipysketch'
 year = '2021'
 url = 'https://github.com/maroba/ipysketch'
-version = '0.0.1'
+version = '0.0.3'
 
 setup(
     name=name,
@@ -25,6 +25,11 @@ setup(
     long_description=open('README.md').read() if exists('README.md') else '',
     long_description_content_type="text/markdown",
     install_requires=['sphinx',
+                      'ipywidgets',
+                      'ipython',
+                      'scikit-image',
+                      'Pillow',
+                      'setuptools'
                       ],
     python_requires=">=3.6",
     classifiers=['Operating System :: OS Independent',

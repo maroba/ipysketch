@@ -5,6 +5,11 @@ import sys
 from ipywidgets import Button, Image, Output, DOMWidget
 from IPython.display import display
 
+# IMPORTANT:
+#
+#    jupyter nbextension install --user --py widgetsnbextension
+#    jupyter nbextension enable --py widgetsnbextension
+#
 
 class Sketch(DOMWidget):
 

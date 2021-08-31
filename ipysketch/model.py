@@ -1,9 +1,3 @@
-import os
-import pathlib
-import pickle
-
-from PIL import Image, ImageDraw
-
 
 class SketchModel(object):
 
