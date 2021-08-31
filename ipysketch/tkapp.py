@@ -48,7 +48,7 @@ class Toolbar(Frame):
 class Sketchpad(Canvas):
 
     def __init__(self, parent, app, **kwargs):
-        super().__init__(parent, background='white', **kwargs)
+        super().__init__(parent, background='white', cursor='cross', **kwargs)
 
         self.app = app
         self.bind('<Button-1>', self.on_button_down)
@@ -56,8 +56,6 @@ class Sketchpad(Canvas):
         self.bind('<B1-Motion>', self.on_move)
 
         self.current_pen = Pen()
-
-        self.map_canvas_ids_to_model = {}
 
     def on_button_down(self, event):
         if not self.contains(event):
@@ -94,13 +92,13 @@ class Sketchpad(Canvas):
     def _add_line(self, event):
         if not self.contains(event):
             return
-        canvas_id = self.create_line((self.lastx, self.lasty, event.x, event.y))
+        self.create_line((self.lastx, self.lasty, event.x, event.y))
         self._save_posn(event)
 
     def contains(self, event):
         w, h = self.get_size()
         bd = 5
-        return event.x > bd and event.y > bd and event.x < w-bd and event.y < h-bd
+        return bd < event.x < w - bd and bd < event.y < h - bd
 
     def get_size(self):
         return self.winfo_width(), self.winfo_height()
