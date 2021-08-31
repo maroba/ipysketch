@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 import os
+import re
 
 import pickle
 from PIL import Image, ImageTk, ImageDraw
@@ -10,7 +11,7 @@ from tkinter import LEFT, TOP, X, FLAT, RAISED
 import pkg_resources
 import pathlib
 
-from ipysketch.model import Pen, SketchModel
+from ipysketch.model import Pen, SketchModel, Circle
 
 MODE_WRITE = 1
 MODE_ERASE = 2
@@ -29,6 +30,14 @@ class Toolbar(Frame):
         self.line_width = DoubleVar()
         self.width_scale = Scale(self, variable=self.line_width, from_=1, to=100, orient=HORIZONTAL, label='Line width')
         self.width_scale.pack(side=LEFT, padx=2, pady=2)
+
+        def check_color(newval):
+            return re.match('^#[0-9A-Fa-f]*$', newval) is not None and len(newval) <= 7
+        check_color_wrapper = (master.register(check_color), '%P')
+
+        self.color_string = StringVar(value='#000000')
+        self.color_entry = Entry(self, textvariable=self.color_string, validate='key', validatecommand=check_color_wrapper)
+        self.color_entry.pack(side=LEFT, padx=2, pady=2)
 
     def create_button(self, file):
 
@@ -62,6 +71,8 @@ class Sketchpad(Canvas):
         if not self.contains(event):
             return
         if self.app.mode == MODE_WRITE:
+            self.current_pen = Pen(width=self.app.toolbar.width_scale.get(),
+                                   color=self.app.toolbar.color_entry.get())
             self.app.model.start_path(event.x, event.y, self.current_pen)
             self._save_posn(event)
         else:
@@ -79,7 +90,7 @@ class Sketchpad(Canvas):
 
     def on_move(self, event):
         if self.app.mode == MODE_WRITE:
-            self._add_line(event)
+            self._add_line(event, self.current_pen.color, self.current_pen.width)
             self.app.model.add_to_path(event.x, event.y)
             if not self.contains(event):
                 return
@@ -90,10 +101,11 @@ class Sketchpad(Canvas):
     def _save_posn(self, event):
         self.lastx, self.lasty = event.x, event.y
 
-    def _add_line(self, event):
+    def _add_line(self, event, color, width):
         if not self.contains(event):
             return
-        self.create_line((self.lastx, self.lasty, event.x, event.y))
+        #self.create_line((self.lastx, self.lasty, event.x, event.y), fill=color, width=width, joinstyle=ROUND)
+        self.draw_line((self.lastx, self.lasty), (event.x, event.y), self.current_pen)
         self._save_posn(event)
 
     def contains(self, event):
@@ -108,7 +120,12 @@ class Sketchpad(Canvas):
         self.delete('all')
         for path in self.app.model.paths:
             for line in path.lines_flat():
-                self.create_line(line, fill=path.pen.color)
+                self.draw_line((line[0], line[1]), (line[2], line[3]), path.pen)
+
+    def draw_line(self, start, end, pen):
+        self.create_line((start[0], start[1], end[0], end[1]), width=pen.width,
+                         capstyle=ROUND, fill=pen.color)
+
 
 
 class SketchApp(object):
@@ -177,7 +194,6 @@ class SketchApp(object):
                            int(end[0] - offset[0]+2), int(end[1] - offset[1]+2)], color)
 
         img.save(pathlib.Path.cwd() / (self.model.name + '.png'))
-
 
     def set_write_mode(self, event):
         self.mode = MODE_WRITE
