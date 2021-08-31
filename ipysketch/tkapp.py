@@ -22,17 +22,21 @@ class Toolbar(Frame):
         super().__init__(master, bd=1, relief=RAISED)
 
         self.app = app
-        self.save_button = self.create_button('save-60.png', self.save)
-        self.pen_button = self.create_button('pen-60.png', self.write)
-        self.erase_button = self.create_button('eraser-60.png', self.write)
+        self.save_button = self.create_button('save-60.png')
+        self.pen_button = self.create_button('pen-60.png')
+        self.erase_button = self.create_button('eraser-60.png')
 
-    def create_button(self, file, callback):
+        self.line_width = DoubleVar()
+        self.width_scale = Scale(self, variable=self.line_width, from_=1, to=100, orient=HORIZONTAL, label='Line width')
+        self.width_scale.pack(side=LEFT, padx=2, pady=2)
+
+    def create_button(self, file):
 
         img = pkg_resources.resource_filename('ipysketch', 'assets/' + file)
         img = Image.open(img)
         img = ImageTk.PhotoImage(img)
 
-        button = Button(self, image=img, relief=FLAT, command=callback)
+        button = Button(self, image=img, relief=FLAT)
         button.image = img
         button.pack(side=LEFT, padx=2, pady=2)
         return button
@@ -40,9 +44,6 @@ class Toolbar(Frame):
     def save(self):
         with open(pathlib.Path.cwd() / (self.app.model.name + '.isk'), 'wb') as f:
             pickle.dump(self.app.model, f)
-
-    def write(self):
-        pass
 
 
 class Sketchpad(Canvas):
@@ -161,6 +162,10 @@ class SketchApp(object):
         bb = self.model.get_bounding_box()
         width = bb[1][0] - bb[0][0]
         height = bb[1][1] - bb[0][1]
+        width += 4
+        height += 4
+        if width < 0 or height < 0:
+            return
         offset = bb[0]
         img = Image.new('RGB', (width, height), 'white')
         draw = ImageDraw.Draw(img)
@@ -168,8 +173,8 @@ class SketchApp(object):
             color = path.pen.color
             for line in path.lines():
                 start, end = line
-                draw.line([int(start[0] - offset[0]), int(start[1] - offset[1]),
-                           int(end[0] - offset[0]), int(end[1] - offset[1])], color)
+                draw.line([int(start[0] - offset[0]+2), int(start[1] - offset[1]+2),
+                           int(end[0] - offset[0]+2), int(end[1] - offset[1]+2)], color)
 
         img.save(pathlib.Path.cwd() / (self.model.name + '.png'))
 
