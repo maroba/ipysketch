@@ -62,17 +62,31 @@ class Sketchpad(Canvas):
     def on_button_down(self, event):
         if not self.contains(event):
             return
-        self.app.model.start_path(event.x, event.y, self.current_pen)
-        self._save_posn(event)
+        if self.app.mode == MODE_WRITE:
+            self.app.model.start_path(event.x, event.y, self.current_pen)
+            self._save_posn(event)
+        else:
+            if self.delete_paths_at(event.x, event.y, radius=10):
+                self.draw_all()
+
+    def delete_paths_at(self, x, y, radius):
+        paths_to_delete = self.app.model.find_paths(x, y, radius=radius)
+        for p in paths_to_delete:
+            self.app.model.remove(p)
+        return len(paths_to_delete) > 0
 
     def on_button_up(self, event):
         self.app.model.finish_path()
 
     def on_move(self, event):
-        self._add_line(event)
-        self.app.model.add_to_path(event.x, event.y)
-        if not self.contains(event):
-            return
+        if self.app.mode == MODE_WRITE:
+            self._add_line(event)
+            self.app.model.add_to_path(event.x, event.y)
+            if not self.contains(event):
+                return
+        else:
+            if self.delete_paths_at(event.x, event.y, radius=10):
+                self.draw_all()
 
     def _save_posn(self, event):
         self.lastx, self.lasty = event.x, event.y

@@ -28,6 +28,19 @@ class SketchModel(object):
         self.paths.append(self.current_path)
         self.current_path = None
 
+    def remove(self, path):
+        self.paths.remove(path)
+
+    def find_paths(self, x, y, radius):
+        found = []
+        circle = Circle((x, y), radius)
+        for p in self.paths:
+            for point in p.points:
+                if circle.contains(point):
+                    found.append(p)
+                    break
+        return found
+
     def clear(self):
         self.paths = []
 
@@ -56,6 +69,15 @@ class Pen(object):
         self.width = width
         self.color = color
 
+
+class Circle(object):
+
+    def __init__(self, center, radius):
+        self.center = center
+        self.radius = radius
+
+    def contains(self, point):
+        return (self.center[0] - point[0])**2 + (self.center[1] - point[1])**2 < self.radius**2
 
 class Path(object):
 
