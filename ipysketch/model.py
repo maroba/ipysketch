@@ -7,10 +7,10 @@ from PIL import Image, ImageDraw
 
 class SketchModel(object):
 
-    def __init__(self):
+    def __init__(self, name):
         self.paths = []
         self.current_path = None
-        self.name = None
+        self.name = name
         print('Init model')
 
     def start_path(self, x, y, pen):
@@ -31,32 +31,23 @@ class SketchModel(object):
     def clear(self):
         self.paths = []
 
-    def save(self, basename=None):
-        if not basename:
-            basename = the_model.name
-        with open(pathlib.Path.cwd() / (basename + '.isk'), 'wb') as f:
-            pickle.dump(self.paths, f)
-
-        # Now save an image version
-        img = Image.new('RGB', self.get_size(), 'white')
-        draw = ImageDraw.Draw(img)
-        for path in self.paths:
-            color = path.pen.color
-            for line in path.lines():
-                start, end = line
-                draw.line([start[0], start[1], end[0], end[1]], color)
-
-        img.save(pathlib.Path.cwd() / (basename + '.png'))
-
-    def load(self):
-        path = pathlib.Path.cwd() / (self.name + '.isk')
-        if os.path.exists(path):
-            with open(path, 'rb') as f:
-                self.paths = pickle.load(f)
-
-    def get_size(self):
+    def get_bounding_box(self):
         # TODO: Make this dynamic later to fit the image size to the actual sketch boundaries
-        return 1024, 768
+        # Idea: find the bounding box for the sketch, then save only the content of the bounding box
+        #       as an image
+        minx, miny = 1E9, 1E9
+        maxx, maxy = -1E9, -1E9
+        for path in self.paths:
+            for point in path.points:
+                if point[0] < minx:
+                    minx = point[0]
+                if point[0] > maxx:
+                    maxx = point[0]
+                if point[1] < miny:
+                    miny = point[1]
+                if point[1] > maxy:
+                    maxy = point[1]
+        return (minx, miny), (maxx, maxy)
 
 
 class Pen(object):
@@ -97,6 +88,3 @@ class Path(object):
         for pt in self.points:
             flat_list.extend([pt[0], pt[1]])
         return tuple(flat_list)
-
-
-the_model = SketchModel()

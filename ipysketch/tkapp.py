@@ -3,23 +3,25 @@ from tkinter import ttk
 import os
 
 import pickle
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw
 from tkinter import Tk, Frame, Button, Widget
 from tkinter import LEFT, TOP, X, FLAT, RAISED
 
 import pkg_resources
 import pathlib
 
-from ipysketch.model import Pen, the_model
+from ipysketch.model import Pen, SketchModel
 
 MODE_WRITE = 1
+MODE_ERASE = 2
 
 
 class Toolbar(Frame):
 
-    def __init__(self, master):
+    def __init__(self, master, app):
         super().__init__(master, bd=1, relief=RAISED)
 
+        self.app = app
         self.save_button = self.create_button('save-60.png', self.save)
         self.pen_button = self.create_button('pen-60.png', self.write)
         self.erase_button = self.create_button('eraser-60.png', self.write)
@@ -36,8 +38,8 @@ class Toolbar(Frame):
         return button
 
     def save(self):
-        with open(pathlib.Path.cwd() / (the_model.name + '.isk'), 'wb') as f:
-            pickle.dump(the_model, f)
+        with open(pathlib.Path.cwd() / (self.app.model.name + '.isk'), 'wb') as f:
+            pickle.dump(self.app.model, f)
 
     def write(self):
         pass
@@ -45,8 +47,10 @@ class Toolbar(Frame):
 
 class Sketchpad(Canvas):
 
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, app, **kwargs):
         super().__init__(parent, background='white', **kwargs)
+
+        self.app = app
         self.bind('<Button-1>', self.on_button_down)
         self.bind('<ButtonRelease-1>', self.on_button_up)
         self.bind('<B1-Motion>', self.on_move)
@@ -58,15 +62,15 @@ class Sketchpad(Canvas):
     def on_button_down(self, event):
         if not self.contains(event):
             return
-        the_model.start_path(event.x, event.y, self.current_pen)
+        self.app.model.start_path(event.x, event.y, self.current_pen)
         self._save_posn(event)
 
     def on_button_up(self, event):
-        the_model.finish_path()
+        self.app.model.finish_path()
 
     def on_move(self, event):
         self._add_line(event)
-        the_model.add_to_path(event.x, event.y)
+        self.app.model.add_to_path(event.x, event.y)
         if not self.contains(event):
             return
 
@@ -89,7 +93,7 @@ class Sketchpad(Canvas):
 
     def draw_all(self):
         self.delete('all')
-        for path in the_model.paths:
+        for path in self.app.model.paths:
             for line in path.lines_flat():
                 self.create_line(line, fill=path.pen.color)
 
@@ -97,7 +101,9 @@ class Sketchpad(Canvas):
 class SketchApp(object):
 
     def __init__(self, name):
-        the_model.name = name
+
+        self.model = SketchModel(name)
+
         root = Tk()
 
         root.columnconfigure(0, weight=1)
@@ -105,10 +111,10 @@ class SketchApp(object):
         root.geometry('1024x768+200+200')
         root.attributes('-topmost', True)
 
-        toolbar = Toolbar(root)
+        toolbar = Toolbar(root, self)
         toolbar.grid(column=0, row=0, sticky=(N, W, E, S))
 
-        pad = Sketchpad(root)
+        pad = Sketchpad(root, self)
         pad.grid(column=0, row=1, sticky=(N, W, E, S), padx=(5, 5), pady=(5, 5))
 
         self.root = root
@@ -120,21 +126,47 @@ class SketchApp(object):
         self.toolbar.erase_button.bind('<Button-1>', self.set_erase_mode)
 
         # Load drawing, if available
-        if os.path.exists(pathlib.Path.cwd() / str(name + '.isk')):
-            the_model.load()
+        isk_file = pathlib.Path.cwd() / str(name + '.isk')
+        if os.path.exists(isk_file):
+            with open(isk_file, 'rb') as f:
+                self.model = pickle.load(f)
             self.pad.draw_all()
+
+        self.mode = MODE_WRITE
 
     def run(self):
         self.root.mainloop()
 
     def save(self, event):
-        the_model.save()
+
+        with open(pathlib.Path.cwd() / (self.model.name + '.isk'), 'wb') as f:
+            pickle.dump(self.model, f)
+
+        self.export_to_png()
+
+    def export_to_png(self):
+
+        bb = self.model.get_bounding_box()
+        width = bb[1][0] - bb[0][0]
+        height = bb[1][1] - bb[0][1]
+        offset = bb[0]
+        img = Image.new('RGB', (width, height), 'white')
+        draw = ImageDraw.Draw(img)
+        for path in self.model.paths:
+            color = path.pen.color
+            for line in path.lines():
+                start, end = line
+                draw.line([int(start[0] - offset[0]), int(start[1] - offset[1]),
+                           int(end[0] - offset[0]), int(end[1] - offset[1])], color)
+
+        img.save(pathlib.Path.cwd() / (self.model.name + '.png'))
+
 
     def set_write_mode(self, event):
-        pass
+        self.mode = MODE_WRITE
 
     def set_erase_mode(self, event):
-        pass
+        self.mode = MODE_ERASE
 
 
 def main(name):
