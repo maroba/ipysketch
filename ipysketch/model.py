@@ -61,7 +61,7 @@ class SketchModel(object):
 
 class Pen(object):
 
-    def __init__(self, width=1, color=(0,0,0)):
+    def __init__(self, width=1, color='#000000'):
         self.width = width
         self.color = color
 
@@ -82,6 +82,13 @@ class Path(object):
         lines = []
         for i in range(1, len(self.points)):
             line = self.points[i-1], self.points[i]
+            lines.append(line)
+        return lines
+
+    def lines_flat(self):
+        lines = []
+        for i in range(1, len(self.points)):
+            line = [self.points[i-1][0], self.points[i-1][1], self.points[i][0], self.points[i][1]]
             lines.append(line)
         return lines
 

@@ -87,6 +87,12 @@ class Sketchpad(Canvas):
     def get_size(self):
         return self.winfo_width(), self.winfo_height()
 
+    def draw_all(self):
+        self.delete('all')
+        for path in the_model.paths:
+            for line in path.lines_flat():
+                self.create_line(line, fill=path.pen.color)
+
 
 class SketchApp(object):
 
@@ -112,6 +118,11 @@ class SketchApp(object):
         self.toolbar.save_button.bind('<Button-1>', self.save)
         self.toolbar.pen_button.bind('<Button-1>', self.set_write_mode)
         self.toolbar.erase_button.bind('<Button-1>', self.set_erase_mode)
+
+        # Load drawing, if available
+        if os.path.exists(pathlib.Path.cwd() / str(name + '.isk')):
+            the_model.load()
+            self.pad.draw_all()
 
     def run(self):
         self.root.mainloop()
