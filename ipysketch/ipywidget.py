@@ -49,7 +49,8 @@ class Sketch(DOMWidget):
 #        super().close(**kwargs)
         self.edit_button.close()
         self.output.close()
-        self.img.close()
+        if self.img:
+            self.img.close()
 
     def show(self, **kwargs):
         display(self.edit_button, self.output)
