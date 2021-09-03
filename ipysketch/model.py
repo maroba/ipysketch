@@ -46,15 +46,15 @@ class SketchModel(object):
         maxx, maxy = -1E9, -1E9
         for path in self.paths:
             for point in path.points:
-                if point[0] < minx:
-                    minx = point[0]
-                if point[0] > maxx:
-                    maxx = point[0]
-                if point[1] < miny:
-                    miny = point[1]
-                if point[1] > maxy:
-                    maxy = point[1]
-        return (minx, miny), (maxx, maxy)
+                if point.x < minx:
+                    minx = point.x
+                if point.x > maxx:
+                    maxx = point.x
+                if point.y < miny:
+                    miny = point.y
+                if point.y > maxy:
+                    maxy = point.y
+        return Point((minx, miny)), Point((maxx, maxy))
 
 
 class Pen(object):
@@ -62,6 +62,64 @@ class Pen(object):
     def __init__(self, width=1, color='#000000'):
         self.width = width
         self.color = color
+
+    def clone(self):
+        return Pen(self.width, self.color)
+
+
+class Point(object):
+
+    def __init__(self, *args):
+        self.xy = list(*args)
+
+    @property
+    def x(self):
+        return self.xy[0]
+
+    @x.setter
+    def x(self, value):
+        self.xy[0] = value
+
+    @property
+    def y(self):
+        return self.xy[1]
+
+    @y.setter
+    def y(self, value):
+        self.xy[1] = value
+
+    def __add__(self, other):
+        p = Point(self.xy)
+        p.x += other.x
+        p.y += other.y
+        return p
+
+    def __sub__(self, other):
+        p = Point(self.xy)
+        p.x -= other.x
+        p.y -= other.y
+        return p
+
+    def __mul__(self, other):
+        assert not isinstance(other, Point)
+        p = Point(self.xy)
+        p.x *= other
+        p.y *= other
+        return p
+
+    def __getitem__(self, idx):
+        return self.xy[idx]
+
+    def __setitem__(self, idx, value):
+        self.xy[idx] = value
+
+    def __repr__(self):
+        return '(%f, %f)' % (self.x, self.y)
+
+
+class Vector(Point):
+    def __init__(self, *args):
+        super(Vector, self).__init__(*args)
 
 
 class Circle(object):
@@ -89,7 +147,8 @@ class Path(object):
         self.points = []
 
     def add_point(self, x, y):
-        self.points.append((x, y))
+        p = Point((x, y))
+        self.points.append(p)
 
     def lines(self):
         '''Enumerate lines in path'''
