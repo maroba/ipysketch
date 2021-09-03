@@ -189,9 +189,18 @@ class SketchApp(object):
         height = lr.y - ul.y
         width += 4
         height += 4
+
+        maxw = 0
+        for p in self.model.paths:
+            if p.pen.width / 2 > maxw:
+                maxw = p.pen.width // 2
+
+        width += 2 * maxw
+        height += 2 * maxw
+
         if width < 0 or height < 0:
             return
-        offset = ul - Point((2, 2))
+        offset = ul - Point((maxw+ 2, maxw + 2))
         img = Image.new('RGB', (width, height), 'white')
         draw = ImageDraw.Draw(img)
         for path in self.model.paths:
@@ -200,15 +209,21 @@ class SketchApp(object):
             radius = width // 2
             for line in path.lines():
                 start, end = line
+                start = start - offset
+                end = end - offset
 
                 if width > 2:
-                    start = Point(start) - offset
-                    end = Point(end) - offset
                     circle = Circle(start, radius)
-                    circle.upper_left()
-                    draw.ellipse((start.x-radius, start.y+radius, end.x+radius, end.y-radius), fill='#FF0000')
-                draw.line([int(start.x - offset.x), int(start.y - offset.y),
-                           int(end.x - offset.x), int(end.y - offset.y)], fill=color, width=width)
+                    cul = circle.upper_left()
+                    clr = circle.lower_right()
+                    draw.ellipse((cul.x, cul.y, clr.x, clr.y), fill=color)
+                    circle = Circle(end, radius)
+                    cul = circle.upper_left()
+                    clr = circle.lower_right()
+                    draw.ellipse((cul.x, cul.y, clr.x, clr.y), fill=color)
+
+                draw.line([int(start.x), int(start.y),
+                           int(end.x), int(end.y)], fill=color, width=width)
 
         img.save(pathlib.Path.cwd() / (self.model.name + '.png'))
 

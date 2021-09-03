@@ -132,10 +132,10 @@ class Circle(object):
         return (self.center[0] - point[0])**2 + (self.center[1] - point[1])**2 < self.radius**2
 
     def upper_left(self):
-        return self.center[0] - self.radius, self.center[1] + self.radius
+        return Point((self.center[0] - self.radius, self.center[1] - self.radius))
 
     def lower_right(self):
-        return self.center[0] + self.radius, self.center[1] - self.radius
+        return Point((self.center[0] + self.radius, self.center[1] + self.radius))
 
 
 class Path(object):
