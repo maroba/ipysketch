@@ -32,10 +32,13 @@ class Toolbar(Frame):
         self.undo_button = self.create_button('undo-50.png')
         self.redo_button = self.create_button('redo-50.png')
 
+        self.color_panel = PenColorPanel(self)
+        self.color_panel.pack(side=LEFT, padx=2, pady=2)
+
         self.color_button = self.create_button('colors.png')
         self.color_button.pack(side=LEFT, padx=2, pady=2)
 
-        self.line_width_panel = LineWidthPanel(self)
+        self.line_width_panel = PenWidthPanel(self)
         self.line_width_panel.pack(side=LEFT, padx=2, pady=2)
 
         self.line_width_scale = Scale(self, from_=1, to=30, orient=HORIZONTAL)
@@ -71,19 +74,19 @@ class Toolbar(Frame):
             pickle.dump(self.app.model, f)
 
 
-class LineWidthPanel(Frame):
+class PenWidthPanel(Frame):
 
     def __init__(self, master, *args, **kwargs):
-        super(LineWidthPanel, self).__init__(master)
+        super(PenWidthPanel, self).__init__(master)
         self.master = master
 
-        self.button_1 = LineWidthButton(self, lw=2)
+        self.button_1 = PenWidthButton(self, lw=2)
         self.button_1.bind('<Button-1>', self.handle)
         self.button_1.pack(side=LEFT, padx=2, pady=2)
-        self.button_2 = LineWidthButton(self, lw=4)
+        self.button_2 = PenWidthButton(self, lw=4)
         self.button_2.bind('<Button-1>', self.handle)
         self.button_2.pack(side=LEFT, padx=2, pady=2)
-        self.button_3 = LineWidthButton(self, lw=8)
+        self.button_3 = PenWidthButton(self, lw=8)
         self.button_3.bind('<Button-1>', self.handle)
         self.button_3.pack(side=LEFT, padx=2, pady=2)
 
@@ -95,11 +98,7 @@ class LineWidthPanel(Frame):
         return self._selected_btn
 
     def handle(self, event):
-        if event.widget == self._selected_btn:
-            pass
-            # TODO: open configure line width panel
-        else:
-            # change active line width
+        if event.widget != self._selected_btn:
             self._selected_btn.set_selected(False)
             self._selected_btn = event.widget
             self._selected_btn.set_selected(True)
@@ -110,10 +109,10 @@ class LineWidthPanel(Frame):
         self.selected_button.set_width(lw)
 
 
-class LineWidthButton(Canvas):
+class PenWidthButton(Canvas):
 
     def __init__(self, master, lw):
-        super(LineWidthButton, self).__init__(master, width=30, height=30, relief=FLAT, bd=1)
+        super(PenWidthButton, self).__init__(master, width=30, height=30, relief=FLAT, bd=1)
         self.master = master
         self.line_width = lw
         self.is_selected = False
@@ -134,6 +133,57 @@ class LineWidthButton(Canvas):
             self.create_rectangle((1, 1, 30, 30), width=1)
         self.create_line((0, 15, 30, 15), width=self.line_width)
 
+
+class PenColorPanel(Frame):
+
+    def __init__(self, master):
+        super(PenColorPanel, self).__init__(master)
+
+        self.button_1 = PenColorButton(self, '#000000')
+        self.button_1.bind('<Button-1>', self.handle)
+        self.button_1.pack(side=LEFT, padx=2, pady=2)
+
+        self.button_2 = PenColorButton(self, '#FF0000')
+        self.button_2.bind('<Button-1>', self.handle)
+        self.button_2.pack(side=LEFT, padx=2, pady=2)
+
+        self.button_3 = PenColorButton(self, '#0000FF')
+        self.button_3.bind('<Button-1>', self.handle)
+        self.button_3.pack(side=LEFT, padx=2, pady=2)
+
+        self.button_1.set_selected(True)
+        self._selected_button = self.button_1
+
+    @property
+    def selected_button(self):
+        return self._selected_button
+
+    def handle(self, event):
+        self._selected_button.set_selected(False)
+        self._selected_button = event.widget
+        self._selected_button.set_selected(True)
+
+
+class PenColorButton(Canvas):
+
+    def __init__(self, master, color):
+        super(PenColorButton, self).__init__(master, width=30, height=30)
+        self.color = color
+        self.set_selected(False)
+
+    def draw(self):
+        self.delete('all')
+        if self.is_selected:
+            self.create_rectangle((1, 1, 30, 30), width=1)
+        self.create_oval((8, 8, 22, 22), fill=self.color)
+
+    def set_selected(self, yesno):
+        self.is_selected = yesno
+        self.draw()
+
+    def set_color(self, color):
+        self.color = color
+        self.draw()
 
 class Sketchpad(Canvas):
 
@@ -156,7 +206,7 @@ class Sketchpad(Canvas):
 
         if self.app.mode == MODE_WRITE:
             self.current_pen = Pen(width=self.app.get_current_line_width(),
-                                   color=self.color[1])
+                                   color=self.app.get_current_color())
             self.app.model.start_path(event.x, event.y, self.current_pen)
             self._save_posn(event)
         else:
@@ -173,6 +223,8 @@ class Sketchpad(Canvas):
         self.app.model.finish_path()
 
     def on_move(self, event):
+        if not self.current_pen:
+            return
         if self.app.mode == MODE_WRITE:
             self._add_line(event, self.current_pen.color, self.current_pen.width)
             self.app.model.add_to_path(event.x, event.y)
@@ -257,6 +309,9 @@ class SketchApp(object):
     def get_current_line_width(self):
         return self.toolbar.line_width_panel.selected_button.line_width
 
+    def get_current_color(self):
+        return self.toolbar.color_panel.selected_button.color
+
     @property
     def model(self):
         return self.history[self._model_ptr]
@@ -329,7 +384,10 @@ class SketchApp(object):
 
     def choose_color(self, event):
         self.root.attributes('-topmost', False)
-        self.pad.color = colorchooser.askcolor(title='Choose color')
+        #self.pad.color = colorchooser.askcolor(title='Choose color')
+        color = colorchooser.askcolor(title='Choose color')
+        if color != (None, None):
+            self.toolbar.color_panel.selected_button.set_color(color[1])
 
     def trigger_action_begins(self):
         if self._model_ptr < len(self.history) - 1:
