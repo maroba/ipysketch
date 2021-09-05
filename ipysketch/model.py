@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 
 class SketchModel(object):
 
@@ -6,6 +8,9 @@ class SketchModel(object):
         self.current_path = None
         self.name = name
         print('Init model')
+
+    def clone(self):
+        return deepcopy(self)
 
     def start_path(self, x, y, pen):
         path = Path(pen)

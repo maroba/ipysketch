@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk, colorchooser
 import os
 import re
+import sys
 
 import pickle
 from PIL import Image, ImageTk, ImageDraw
@@ -28,6 +29,8 @@ class Toolbar(Frame):
         self.save_button = self.create_button('save-60.png')
         self.pen_button = self.create_button('pen-60.png')
         self.erase_button = self.create_button('eraser-60.png')
+        self.undo_button = self.create_button('undo-50.png')
+        self.redo_button = self.create_button('redo-50.png')
 
         self.line_width = DoubleVar()
         self.width_scale = Scale(self, variable=self.line_width, from_=1, to=100, orient=HORIZONTAL, label='Line width')
@@ -48,8 +51,20 @@ class Toolbar(Frame):
 
         img = pkg_resources.resource_filename('ipysketch', 'assets/' + file)
         img = Image.open(img)
+        img = img.resize((30, 30))
         img = ImageTk.PhotoImage(img)
 
+        #style = ttk.Style()
+        #style.map(
+        #    "Custom.TButton",
+        #    image=[
+        #        ("disabled", img),
+        #        ("!disabled", img),
+        #        ("active", img)
+        #    ]
+        #)
+
+        #button = ttk.Button(self, style=style)
         button = Button(self, image=img, relief=FLAT)
         button.image = img
         button.pack(side=LEFT, padx=2, pady=2)
@@ -76,6 +91,9 @@ class Sketchpad(Canvas):
     def on_button_down(self, event):
         if not self.contains(event):
             return
+
+        self.app.trigger_action_begins()
+
         if self.app.mode == MODE_WRITE:
             self.current_pen = Pen(width=self.app.toolbar.width_scale.get(),
                                    color=self.color[1])
@@ -103,7 +121,6 @@ class Sketchpad(Canvas):
         else:
             if self.delete_paths_at(event.x, event.y, radius=10):
                 self.draw_all()
-        print(event.x, event.y)
 
     def _save_posn(self, event):
         self.lastx, self.lasty = event.x, event.y
@@ -139,7 +156,8 @@ class SketchApp(object):
 
     def __init__(self, name):
 
-        self.model = SketchModel(name)
+        self.history = [SketchModel(name)]
+        self._model_ptr = 0
 
         root = Tk()
         root.title('ipysketch: ' + name)
@@ -161,6 +179,8 @@ class SketchApp(object):
         self.toolbar.pen_button.bind('<Button-1>', self.set_write_mode)
         self.toolbar.erase_button.bind('<Button-1>', self.set_erase_mode)
         self.toolbar.color_button.bind('<Button-1>', self.choose_color)
+        self.toolbar.undo_button.bind('<Button-1>', self.undo_action)
+        self.toolbar.redo_button.bind('<Button-1>', self.redo_action)
 
         # Load drawing, if available
         isk_file = pathlib.Path.cwd() / str(name + '.isk')
@@ -171,6 +191,14 @@ class SketchApp(object):
 
         self.mode = MODE_WRITE
         self.root.attributes('-topmost', True)
+
+    @property
+    def model(self):
+        return self.history[self._model_ptr]
+
+    @model.setter
+    def model(self, value):
+        self.history[self._model_ptr] = value
 
     def run(self):
         self.root.mainloop()
@@ -236,6 +264,22 @@ class SketchApp(object):
     def choose_color(self, event):
         self.root.attributes('-topmost', False)
         self.pad.color = colorchooser.askcolor(title='Choose color')
+
+    def trigger_action_begins(self):
+        if self._model_ptr < len(self.history) - 1:
+            self.history = self.history[:self._model_ptr+1]
+        self.history.append(self.model.clone())
+        self._model_ptr += 1
+
+    def undo_action(self, event):
+        if self._model_ptr > 0:
+            self._model_ptr -= 1
+            self.pad.draw_all()
+
+    def redo_action(self, event):
+        if self._model_ptr < len(self.history) - 1:
+            self._model_ptr += 1
+            self.pad.draw_all()
 
 
 def main(name):
