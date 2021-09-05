@@ -67,7 +67,7 @@ class Toolbar(Frame):
         #)
 
         #button = ttk.Button(self, style=style)
-        button = Button(self, image=img, relief=FLAT)
+        button = Button(self, image=img, relief=RAISED)
         button.image = img
         button.pack(side=LEFT, padx=2, pady=2)
         return button
@@ -213,10 +213,7 @@ class Sketchpad(Canvas):
         if self.app.mode == MODE_WRITE:
             self.app.trigger_action_begins()
             self.current_action['type'] = 'write'
-            self.current_pen = Pen(width=self.app.get_current_line_width(),
-                                   color=self.app.get_current_color())
-            self.app.model.start_path(event.x, event.y, self.current_pen)
-            self._save_posn(event)
+            self.app.model.start_path(event.x, event.y, self.app.get_current_pen())
         elif self.app.mode == MODE_ERASE:
             self.app.trigger_action_begins()
             self.current_action['type'] = 'erase'
@@ -226,9 +223,7 @@ class Sketchpad(Canvas):
 
             if self.selected_paths_uuids:
 
-                for path in self.app.model.paths:
-                    if path.uuid not in self.selected_paths_uuids:
-                        continue
+                for path in self.app.model.filter_by_uuids(self.selected_paths_uuids):
                     circle = Circle((event.x, event.y), 10)
                     if path.overlaps(circle):
                         self.current_action['type'] = 'transform'
@@ -255,7 +250,7 @@ class Sketchpad(Canvas):
 
     def on_button_up(self, event):
         if self.app.mode == MODE_WRITE:
-            self.app.model.finish_path()
+            pass # nothing to do any more
         elif self.app.mode == MODE_LASSO:
             if self.current_action['type'] == 'select':
                 paths = []
@@ -275,13 +270,18 @@ class Sketchpad(Canvas):
         self.current_action = None
 
     def on_move(self, event):
-        if not self.app.mode == MODE_ERASE and not self.app.mode == MODE_LASSO and not self.current_pen:
+
+        if not self.contains(event):
             return
+
+        if not self.current_action:
+#        if not self.app.mode == MODE_ERASE and not self.app.mode == MODE_LASSO:
+            return
+
         if self.app.mode == MODE_WRITE:
-            self._add_line(event, self.current_pen.color, self.current_pen.width)
             self.app.model.add_to_path(event.x, event.y)
-            if not self.contains(event):
-                return
+            self._add_line()
+
         elif self.app.mode == MODE_ERASE:
             if self.delete_paths_at(event.x, event.y, radius=10):
                 self.draw_all()
@@ -290,7 +290,7 @@ class Sketchpad(Canvas):
                 if self._lasso_path is not None:
                     self._lasso_path.add_point(event.x, event.y)
                     self.draw_line(self._lasso_path.points[-2], self._lasso_path.points[-1],
-                                   self._lasso_path.pen.color, self._lasso_path.pen.width,
+                                   self._lasso_path.pen,
                                    dash=self._lasso_path.pen.dash)
                     return
             elif self.current_action['type'] == 'transform':
@@ -300,16 +300,10 @@ class Sketchpad(Canvas):
                         path.offset = offset
                 self.draw_all()
 
-
-    def _save_posn(self, event):
-        self.lastx, self.lasty = event.x, event.y
-
-    def _add_line(self, event, color, width):
-        if not self.contains(event):
-            return
-        #self.create_line((self.lastx, self.lasty, event.x, event.y), fill=color, width=width, joinstyle=ROUND)
-        self.draw_line((self.lastx, self.lasty), (event.x, event.y), self.current_pen.color, self.current_pen.width)
-        self._save_posn(event)
+    def _add_line(self):
+        path = self.app.get_current_path()
+        p_from, p_to = path.points[-2], path.points[-1]
+        self.draw_line((p_from.x, p_from.y), (p_to.x, p_to.y), path.pen)
 
     def contains(self, event):
         w, h = self.get_size()
@@ -325,19 +319,25 @@ class Sketchpad(Canvas):
         for path in self.app.model.paths:
             if path.uuid in self.selected_paths_uuids:
                 for line in path.lines_flat():
-                    self.draw_line((line[0], line[1]), (line[2], line[3]), '#00FFFF', path.pen.width + 4, dash=(3, 5))
+                    self.draw_line((line[0], line[1]), (line[2], line[3]), path.pen, color='#00FFFF', width=path.pen.width + 4, dash=(3, 5))
 
             for line in path.lines_flat():
-                self.draw_line((line[0], line[1]), (line[2], line[3]), path.pen.color, path.pen.width)
+                self.draw_line((line[0], line[1]), (line[2], line[3]), path.pen)
 
         if self._lasso_path:
             for line in self._lasso_path.lines_flat():
-                self.draw_line((line[0], line[1]), (line[2], line[3]), self._lasso_path.pen.color, self._lasso_path.pen.width)
+                self.draw_line((line[0], line[1]), (line[2], line[3]), self._lasso_path.pen)
 
-    def draw_line(self, start, end, color, width, **kwargs):
-        self.create_line((start[0], start[1], end[0], end[1]), width=width,
-                         capstyle=ROUND, fill=color, **kwargs)
+    def draw_line(self, start, end, pen, **kwargs):
 
+        cfg = {
+            'width': kwargs.get('width', pen.width),
+            'fill': kwargs.get('color', pen.color),
+            'dash': kwargs.get('dash', pen.dash),
+            'capstyle': ROUND
+        }
+
+        self.create_line((start[0], start[1], end[0], end[1]), cfg)
 
 
 class SketchApp(object):
@@ -388,6 +388,15 @@ class SketchApp(object):
 
     def get_current_color(self):
         return self.toolbar.color_panel.selected_button.color
+
+    def get_current_path(self):
+        return self.model.paths[-1]
+
+    def get_current_pen(self):
+        pen = Pen()
+        pen.color = self.toolbar.color_panel.selected_button.color
+        pen.width = self.toolbar.line_width_panel.selected_button.line_width
+        return pen
 
     @property
     def model(self):
@@ -454,17 +463,24 @@ class SketchApp(object):
         img.save(pathlib.Path.cwd() / (self.model.name + '.png'))
 
     def set_write_mode(self):
+        self.end_mode()
         self.mode = MODE_WRITE
 
     def set_erase_mode(self, event):
+        self.end_mode()
         self.mode = MODE_ERASE
 
     def set_lasso_mode(self, event):
+        self.end_mode()
         self.mode = MODE_LASSO
+
+    def end_mode(self):
+        if self.mode == MODE_LASSO:
+            self.pad.selected_paths_uuids = []
+            self.pad.draw_all()
 
     def choose_color(self, event):
         self.root.attributes('-topmost', False)
-        #self.pad.color = colorchooser.askcolor(title='Choose color')
         color = colorchooser.askcolor(title='Choose color')
         if color != (None, None):
             self.toolbar.color_panel.selected_button.set_color(color[1])

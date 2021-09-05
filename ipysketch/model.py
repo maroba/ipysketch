@@ -8,7 +8,6 @@ class SketchModel(object):
 
     def __init__(self, name):
         self.paths = []
-        self.current_path = None
         self.name = name
         print('Init model')
 
@@ -18,17 +17,16 @@ class SketchModel(object):
     def start_path(self, x, y, pen):
         path = Path(pen)
         path.add_point(x, y)
-        self.current_path = path
+        self.paths.append(path)
+
+    @property
+    def current_path(self):
+        if self.paths:
+            return self.paths[-1]
 
     def add_to_path(self, x, y):
         if self.current_path:
             self.current_path.add_point(x, y)
-
-    def finish_path(self):
-        if self.current_path is None:
-            return
-        self.paths.append(self.current_path)
-        self.current_path = None
 
     def remove(self, path):
         self.paths.remove(path)
@@ -64,6 +62,12 @@ class SketchModel(object):
                     maxy = point.y
         return Point((minx, miny)), Point((maxx, maxy))
 
+    def filter_by_uuids(self, uuids):
+        filtered = []
+        for path in self.paths:
+            if path.uuid in uuids:
+                filtered.append(path)
+        return filtered
 
 class Pen(object):
 
