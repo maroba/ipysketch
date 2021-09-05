@@ -40,12 +40,11 @@ class Toolbar(Frame):
             return re.match('^#[0-9A-Fa-f]*$', newval) is not None and len(newval) <= 7
         check_color_wrapper = (master.register(check_color), '%P')
 
-        self.color_button = Button(self, text='Color')
+        self.color_button = self.create_button('colors.png')
         self.color_button.pack(side=LEFT, padx=2, pady=2)
 
-        #self.color_string = StringVar(value='#000000')
-        #self.color_entry = Entry(self, textvariable=self.color_string, validate='key', validatecommand=check_color_wrapper)
-        #self.color_entry.pack(side=LEFT, padx=2, pady=2)
+        self.line_width_panel = LineWidthPanel(self)
+        self.line_width_panel.pack(side=LEFT, padx=2, pady=2)
 
     def create_button(self, file):
 
@@ -75,6 +74,43 @@ class Toolbar(Frame):
             pickle.dump(self.app.model, f)
 
 
+class LineWidthPanel(Frame):
+
+    def __init__(self, master, *args, **kwargs):
+        super(LineWidthPanel, self).__init__(master)
+
+        self.button_1 = LineWidthButton(self, lw=2)
+        self.button_1.bind('<Button-1>', self.handle)
+        self.button_1.pack(side=LEFT, padx=2, pady=2)
+        self.button_2 = LineWidthButton(self, lw=4)
+        self.button_2.bind('<Button-1>', self.handle)
+        self.button_2.pack(side=LEFT, padx=2, pady=2)
+        self.button_3 = LineWidthButton(self, lw=8)
+        self.button_3.bind('<Button-1>', self.handle)
+        self.button_3.pack(side=LEFT, padx=2, pady=2)
+
+        self.selected_btn = self.button_1
+
+    def handle(self, event):
+        if event.widget == self.selected_btn:
+            pass
+            # TODO: open configure line width panel
+        else:
+            # change active line width
+            self.selected_btn = event.widget
+
+
+class LineWidthButton(Canvas):
+
+    def __init__(self, master, lw):
+        super(LineWidthButton, self).__init__(master, width=30, height=30, relief=FLAT, bd=1)
+        self.create_line((0, 15, 30, 15), width=lw)
+        self.line_width = lw
+        #self.pack(side=LEFT, padx=2, pady=2)
+        #self.configure(command=self.handle)
+
+
+
 class Sketchpad(Canvas):
 
     def __init__(self, parent, app, **kwargs):
@@ -95,7 +131,7 @@ class Sketchpad(Canvas):
         self.app.trigger_action_begins()
 
         if self.app.mode == MODE_WRITE:
-            self.current_pen = Pen(width=self.app.toolbar.width_scale.get(),
+            self.current_pen = Pen(width=self.app.get_current_line_width(),
                                    color=self.color[1])
             self.app.model.start_path(event.x, event.y, self.current_pen)
             self._save_posn(event)
@@ -175,8 +211,10 @@ class SketchApp(object):
         self.toolbar = toolbar
         self.pad = pad
 
-        self.toolbar.save_button.bind('<Button-1>', self.save)
-        self.toolbar.pen_button.bind('<Button-1>', self.set_write_mode)
+        #self.toolbar.save_button.bind('<Button-1>', self.save)
+        self.toolbar.save_button.configure(command=self.save)
+        #self.toolbar.pen_button.bind('<Button-1>', self.set_write_mode)
+        self.toolbar.pen_button.configure(command=self.set_write_mode)
         self.toolbar.erase_button.bind('<Button-1>', self.set_erase_mode)
         self.toolbar.color_button.bind('<Button-1>', self.choose_color)
         self.toolbar.undo_button.bind('<Button-1>', self.undo_action)
@@ -192,6 +230,9 @@ class SketchApp(object):
         self.mode = MODE_WRITE
         self.root.attributes('-topmost', True)
 
+    def get_current_line_width(self):
+        return self.toolbar.line_width_panel.selected_btn.line_width
+
     @property
     def model(self):
         return self.history[self._model_ptr]
@@ -203,7 +244,7 @@ class SketchApp(object):
     def run(self):
         self.root.mainloop()
 
-    def save(self, event):
+    def save(self):
 
         with open(pathlib.Path.cwd() / (self.model.name + '.isk'), 'wb') as f:
             pickle.dump(self.model, f)
@@ -255,7 +296,7 @@ class SketchApp(object):
 
         img.save(pathlib.Path.cwd() / (self.model.name + '.png'))
 
-    def set_write_mode(self, event):
+    def set_write_mode(self):
         self.mode = MODE_WRITE
 
     def set_erase_mode(self, event):
