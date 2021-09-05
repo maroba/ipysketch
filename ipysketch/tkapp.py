@@ -223,7 +223,7 @@ class Sketchpad(Canvas):
         self.app.model.finish_path()
 
     def on_move(self, event):
-        if not self.current_pen:
+        if not self.app.mode == MODE_ERASE and not self.current_pen:
             return
         if self.app.mode == MODE_WRITE:
             self._add_line(event, self.current_pen.color, self.current_pen.width)
