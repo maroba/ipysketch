@@ -32,14 +32,6 @@ class Toolbar(Frame):
         self.undo_button = self.create_button('undo-50.png')
         self.redo_button = self.create_button('redo-50.png')
 
-        self.line_width = DoubleVar()
-        self.width_scale = Scale(self, variable=self.line_width, from_=1, to=100, orient=HORIZONTAL, label='Line width')
-        self.width_scale.pack(side=LEFT, padx=2, pady=2)
-
-        def check_color(newval):
-            return re.match('^#[0-9A-Fa-f]*$', newval) is not None and len(newval) <= 7
-        check_color_wrapper = (master.register(check_color), '%P')
-
         self.color_button = self.create_button('colors.png')
         self.color_button.pack(side=LEFT, padx=2, pady=2)
 
@@ -269,13 +261,14 @@ class SketchApp(object):
 
         if width < 0 or height < 0:
             return
+
         offset = ul - Point((maxw+ 2, maxw + 2))
         img = Image.new('RGB', (width, height), 'white')
         draw = ImageDraw.Draw(img)
         for path in self.model.paths:
             color = path.pen.color
             width = path.pen.width
-            radius = width // 2
+            radius = width // 2 - 1
             for line in path.lines():
                 start, end = line
                 start = start - offset
