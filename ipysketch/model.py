@@ -1,4 +1,7 @@
 from copy import deepcopy
+from shapely.geometry import Point as shPoint
+from shapely.geometry.polygon import Polygon
+import uuid
 
 
 class SketchModel(object):
@@ -67,6 +70,7 @@ class Pen(object):
     def __init__(self, width=1, color='#000000'):
         self.width = width
         self.color = color
+        self.dash = None
 
     def clone(self):
         return Pen(self.width, self.color)
@@ -148,8 +152,10 @@ class Path(object):
     def __init__(self, pen=None):
         if not pen:
             pen = Pen()
+        self.uuid = str(uuid.uuid4())
         self.pen = pen
         self.points = []
+        self.offset = Point((0, 0))
 
     def add_point(self, x, y):
         p = Point((x, y))
@@ -165,13 +171,35 @@ class Path(object):
 
     def lines_flat(self):
         lines = []
-        for i in range(1, len(self.points)):
-            line = [self.points[i-1][0], self.points[i-1][1], self.points[i][0], self.points[i][1]]
+        points = [p + self.offset for p in self.points]
+        for i in range(1, len(points)):
+            line = [points[i-1][0], points[i-1][1], points[i][0], points[i][1]]
             lines.append(line)
         return lines
 
     def points_flattened(self):
         flat_list = []
-        for pt in self.points:
+        points = [p + self.offset for p in self.points]
+        for pt in points:
             flat_list.extend([pt[0], pt[1]])
         return tuple(flat_list)
+
+    def contains(self, point):
+        # Close path creating a polygon
+        try:
+            pt = shPoint(point.x, point.y)
+            polygon = Polygon((p.x, p.y) for p in self.points)
+            return polygon.contains(pt)
+        except:
+            pass
+
+    def overlaps(self, circle):
+        for pt in self.points:
+            if circle.contains(pt):
+                return True
+        return False
+
+    def apply_offset(self):
+        for i, p in enumerate(self.points):
+            self.points[i] = p + self.offset
+        self.offset = Point((0, 0))
