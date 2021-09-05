@@ -38,6 +38,11 @@ class Toolbar(Frame):
         self.line_width_panel = LineWidthPanel(self)
         self.line_width_panel.pack(side=LEFT, padx=2, pady=2)
 
+        self.line_width_scale = Scale(self, from_=1, to=30, orient=HORIZONTAL)
+        self.line_width_scale.set(self.line_width_panel.selected_button.line_width)
+        self.line_width_scale.bind('<ButtonRelease-1>', self.line_width_panel.set_width)
+        self.line_width_scale.pack(side=LEFT, padx=2, pady=2)
+
     def create_button(self, file):
 
         img = pkg_resources.resource_filename('ipysketch', 'assets/' + file)
@@ -70,6 +75,7 @@ class LineWidthPanel(Frame):
 
     def __init__(self, master, *args, **kwargs):
         super(LineWidthPanel, self).__init__(master)
+        self.master = master
 
         self.button_1 = LineWidthButton(self, lw=2)
         self.button_1.bind('<Button-1>', self.handle)
@@ -81,26 +87,52 @@ class LineWidthPanel(Frame):
         self.button_3.bind('<Button-1>', self.handle)
         self.button_3.pack(side=LEFT, padx=2, pady=2)
 
-        self.selected_btn = self.button_1
+        self._selected_btn = self.button_1
+        self._selected_btn.set_selected(True)
+
+    @property
+    def selected_button(self):
+        return self._selected_btn
 
     def handle(self, event):
-        if event.widget == self.selected_btn:
+        if event.widget == self._selected_btn:
             pass
             # TODO: open configure line width panel
         else:
             # change active line width
-            self.selected_btn = event.widget
+            self._selected_btn.set_selected(False)
+            self._selected_btn = event.widget
+            self._selected_btn.set_selected(True)
+            self.master.line_width_scale.set(self._selected_btn.line_width)
+
+    def set_width(self, event):
+        lw = event.widget.get()
+        self.selected_button.set_width(lw)
 
 
 class LineWidthButton(Canvas):
 
     def __init__(self, master, lw):
         super(LineWidthButton, self).__init__(master, width=30, height=30, relief=FLAT, bd=1)
-        self.create_line((0, 15, 30, 15), width=lw)
+        self.master = master
         self.line_width = lw
-        #self.pack(side=LEFT, padx=2, pady=2)
-        #self.configure(command=self.handle)
+        self.is_selected = False
+        self.set_selected(False)
+        self.draw()
 
+    def set_width(self, lw):
+        self.line_width = lw
+        self.draw()
+
+    def set_selected(self, yesno):
+        self.is_selected = yesno
+        self.draw()
+
+    def draw(self):
+        self.delete('all')
+        if self.is_selected:
+            self.create_rectangle((1, 1, 30, 30), width=1)
+        self.create_line((0, 15, 30, 15), width=self.line_width)
 
 
 class Sketchpad(Canvas):
@@ -223,7 +255,7 @@ class SketchApp(object):
         self.root.attributes('-topmost', True)
 
     def get_current_line_width(self):
-        return self.toolbar.line_width_panel.selected_btn.line_width
+        return self.toolbar.line_width_panel.selected_button.line_width
 
     @property
     def model(self):
