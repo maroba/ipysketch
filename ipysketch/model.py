@@ -9,7 +9,7 @@ class SketchModel(object):
     def __init__(self, name):
         self.paths = []
         self.name = name
-        print('Init model')
+        self.dirty = True
 
     def clone(self):
         return deepcopy(self)

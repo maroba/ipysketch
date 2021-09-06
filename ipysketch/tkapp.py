@@ -27,7 +27,10 @@ class Toolbar(Frame):
         self.parent = master
 
         self.app = app
-        self.save_button = self.create_button('save-60.png')
+        self.save_button = ToolbarButton(self, image='save-60.png', image_disabled='save-disabled-60.png')
+        self.save_button.pack(side=LEFT, padx=2, pady=2)
+        self.save_button.state = ToolbarButton.DISABLED
+
         self.pen_button = self.create_button('pen-60.png')
         self.erase_button = self.create_button('eraser-60.png')
         self.lasso_button = self.create_button('lasso-80.png')
@@ -51,7 +54,7 @@ class Toolbar(Frame):
 
 
     def create_button(self, file):
-        button = ToolbarButton(self, file)
+        button = ToolbarButton(self, image=file)
         button.pack(side=LEFT, padx=2, pady=2)
         return button
 
@@ -143,7 +146,9 @@ class ToolbarButton(Canvas):
         self._state = ToolbarButton.SELECTED
 
     def set_disabled_state(self):
-        pass
+        self.delete('all')
+        self.create_image(1, 1, anchor=NW, image=self.image_disabled)
+        self._state = ToolbarButton.DISABLED
 
     def draw(self):
         self.label = Label(self)
@@ -483,10 +488,16 @@ class SketchApp(object):
 
     def save(self):
 
+        if not self.model.dirty:
+            return
+
         with open(pathlib.Path.cwd() / (self.model.name + '.isk'), 'wb') as f:
             pickle.dump(self.model, f)
 
         self.export_to_png()
+
+        self.model.dirty = False
+        self.toolbar.save_button.state = ToolbarButton.DISABLED
 
     def export_to_png(self):
         ul, lr = self.model.get_bounding_box()
@@ -580,6 +591,8 @@ class SketchApp(object):
             self.history = self.history[:self._model_ptr+1]
         self.history.append(self.model.clone())
         self._model_ptr += 1
+        self.model.dirty = True
+        self.toolbar.save_button.state = ToolbarButton.NORMAL
 
     def undo_action(self):
         if self._model_ptr > 0:
