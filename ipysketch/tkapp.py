@@ -49,32 +49,55 @@ class Toolbar(Frame):
         self.line_width_scale.bind('<ButtonRelease-1>', self.line_width_panel.set_width)
         self.line_width_scale.pack(side=LEFT, padx=2, pady=2)
 
+
     def create_button(self, file):
 
-        img = pkg_resources.resource_filename('ipysketch', 'assets/' + file)
-        img = Image.open(img)
-        img = img.resize((30, 30))
-        img = ImageTk.PhotoImage(img)
+        #img = pkg_resources.resource_filename('ipysketch', 'assets/' + file)
+        #png = Image.open(img).convert('RGBA')
+        #background = Image.new('RGBA', png.size, (255, 255, 255))
+        #alpha_composite = Image.alpha_composite(background, png)
+        #img = alpha_composite.resize((30, 30), Image.ANTIALIAS)
+        #img = ImageTk.PhotoImage(img)
 
-        #style = ttk.Style()
-        #style.map(
-        #    "Custom.TButton",
-        #    image=[
-        #        ("disabled", img),
-        #        ("!disabled", img),
-        #        ("active", img)
-        #    ]
-        #)
+        #button = Button(self, image=img, relief=RAISED)
+        #button.image = img
+        #button.pack(side=LEFT, padx=2, pady=2)
+        #return button
 
-        #button = ttk.Button(self, style=style)
-        button = Button(self, image=img, relief=RAISED)
-        button.image = img
+        button = ToolbarButton(self, file)
         button.pack(side=LEFT, padx=2, pady=2)
         return button
 
     def save(self):
         with open(pathlib.Path.cwd() / (self.app.model.name + '.isk'), 'wb') as f:
             pickle.dump(self.app.model, f)
+
+
+class ToolbarButton(Canvas):
+
+    def __init__(self, master, file):
+        super(ToolbarButton, self).__init__(master, width=30, height=30)
+        img = pkg_resources.resource_filename('ipysketch', 'assets/' + file)
+        png = Image.open(img).convert('RGBA')
+        background = Image.new('RGBA', png.size, (255, 255, 255))
+        alpha_composite = Image.alpha_composite(background, png)
+        img = alpha_composite.resize((30, 30), Image.ANTIALIAS)
+        img = ImageTk.PhotoImage(img)
+        self.image = img
+
+        self.label = Label(self)
+        self.label.pack(side=LEFT, expand=YES, fill=BOTH)
+        self.label.configure(image=self.image)
+
+        self._active = False
+
+        self.label.bind('<Button-1>', self._exec_command)
+
+    def _exec_command(self, event):
+        self.callback()
+
+    def set_command(self, callback):
+        self.callback = callback
 
 
 class PenWidthPanel(Frame):
@@ -187,6 +210,7 @@ class PenColorButton(Canvas):
     def set_color(self, color):
         self.color = color
         self.draw()
+
 
 class Sketchpad(Canvas):
 
@@ -363,15 +387,14 @@ class SketchApp(object):
         self.toolbar = toolbar
         self.pad = pad
 
-        #self.toolbar.save_button.bind('<Button-1>', self.save)
-        self.toolbar.save_button.configure(command=self.save)
-        #self.toolbar.pen_button.bind('<Button-1>', self.set_write_mode)
-        self.toolbar.pen_button.configure(command=self.set_write_mode)
-        self.toolbar.erase_button.bind('<Button-1>', self.set_erase_mode)
-        self.toolbar.lasso_button.bind('<Button-1>', self.set_lasso_mode)
-        self.toolbar.color_button.bind('<Button-1>', self.choose_color)
-        self.toolbar.undo_button.bind('<Button-1>', self.undo_action)
-        self.toolbar.redo_button.bind('<Button-1>', self.redo_action)
+        self.toolbar.save_button.set_command(self.save)
+        self.toolbar.pen_button.set_command(self.set_write_mode)
+
+        self.toolbar.erase_button.set_command(self.set_erase_mode)
+        self.toolbar.lasso_button.set_command(self.set_lasso_mode)
+        self.toolbar.color_button.set_command(self.choose_color)
+        self.toolbar.undo_button.set_command(self.undo_action)
+        self.toolbar.redo_button.set_command(self.redo_action)
 
         # Load drawing, if available
         isk_file = pathlib.Path.cwd() / str(name + '.isk')
@@ -466,11 +489,11 @@ class SketchApp(object):
         self.end_mode()
         self.mode = MODE_WRITE
 
-    def set_erase_mode(self, event):
+    def set_erase_mode(self):
         self.end_mode()
         self.mode = MODE_ERASE
 
-    def set_lasso_mode(self, event):
+    def set_lasso_mode(self):
         self.end_mode()
         self.mode = MODE_LASSO
 
@@ -491,12 +514,12 @@ class SketchApp(object):
         self.history.append(self.model.clone())
         self._model_ptr += 1
 
-    def undo_action(self, event):
+    def undo_action(self):
         if self._model_ptr > 0:
             self._model_ptr -= 1
             self.pad.draw_all()
 
-    def redo_action(self, event):
+    def redo_action(self):
         if self._model_ptr < len(self.history) - 1:
             self._model_ptr += 1
             self.pad.draw_all()
