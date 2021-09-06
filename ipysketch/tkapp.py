@@ -23,7 +23,7 @@ MODE_LASSO = 3
 class Toolbar(Frame):
 
     def __init__(self, master, app):
-        super().__init__(master, bd=1, relief=RAISED)
+        super().__init__(master, bd=0, relief=RAISED)
         self.parent = master
 
         self.app = app
@@ -47,10 +47,14 @@ class Toolbar(Frame):
         self.line_width_panel = PenWidthPanel(self)
         self.line_width_panel.pack(side=LEFT, padx=2, pady=2)
 
-        self.line_width_scale = Scale(self, from_=1, to=30, orient=HORIZONTAL)
-        self.line_width_scale.set(self.line_width_panel.selected_button.line_width)
-        self.line_width_scale.bind('<ButtonRelease-1>', self.line_width_panel.set_width)
-        self.line_width_scale.pack(side=LEFT, padx=2, pady=2)
+        #self.line_width_scale = Scale(self, from_=1, to=30, orient=HORIZONTAL)
+        #self.line_width_scale.set(self.line_width_panel.selected_button.line_width)
+        #self.line_width_scale.bind('<ButtonRelease-1>', self.line_width_panel.set_width)
+        #self.line_width_scale.pack(side=LEFT, padx=2, pady=2)
+
+        self.slider = LineWidthSlider(self)
+        self.slider.pack(side=LEFT, padx=2)
+        self.slider.bind('<ButtonRelease-1>', self.line_width_panel.set_width)
 
 
     def create_button(self, file):
@@ -186,7 +190,8 @@ class PenWidthPanel(Frame):
             self._selected_btn.state = ToolbarButton.NORMAL
             self._selected_btn = event.widget
             self._selected_btn.state = ToolbarButton.SELECTED
-            self.master.line_width_scale.set(self._selected_btn.line_width)
+            #self.master.line_width_scale.set(self._selected_btn.line_width)
+            self.master.slider.set(self._selected_btn.line_width)
 
     def set_width(self, event):
         lw = event.widget.get()
@@ -417,6 +422,45 @@ class Sketchpad(Canvas):
         self.create_line((start[0], start[1], end[0], end[1]), cfg)
 
 
+class LineWidthSlider(Canvas):
+
+    def __init__(self, master):
+        self.width = 120
+        self.lw = 2
+        super(LineWidthSlider, self).__init__(master, height=32, width=self.width)
+        self.bind('<Button-1>', self.on_button_down)
+        self.bind('<B1-Motion>', self.on_move)
+        self.bind('<ButtonRelease-1>', self.on_button_up)
+        self.callback = None # when value changed
+        self.draw()
+
+    def on_button_down(self, event):
+        self.lw = int(event.x / self.width * 30) + 1
+        self.draw()
+
+    def on_move(self, event):
+        self.lw = int(event.x / self.width * 30) + 1
+        self.draw()
+
+    def on_button_up(self, event):
+        self.lw = int(event.x / self.width * 30) + 1
+        self.draw()
+        self.callback()
+
+    def set(self, value):
+        self.lw = value
+        self.draw()
+
+    def get(self):
+        return self.lw
+
+    def draw(self):
+        self.delete('all')
+        posx = int((self.lw-1) / 30 * self.width)+2
+        self.create_polygon((0, 14, self.width, 30, self.width, 2), fill='#000000')
+        self.create_rectangle((posx, 30, posx+4, 0), fill='#888888')
+
+
 class SketchApp(object):
 
     def __init__(self, name):
@@ -456,7 +500,7 @@ class SketchApp(object):
                 self.model = pickle.load(f)
             self.pad.draw_all()
 
-        #self.mode = MODE_WRITE
+        self.toolbar.slider.callback = self.set_line_width
         self.start_mode(MODE_WRITE)
         self.root.attributes('-topmost', True)
 
@@ -474,6 +518,10 @@ class SketchApp(object):
         pen.color = self.toolbar.color_panel.selected_button.color
         pen.width = self.toolbar.line_width_panel.selected_button.line_width
         return pen
+
+    def set_line_width(self):
+        lw = self.toolbar.slider.get()
+        self.toolbar.line_width_panel.selected_button.set_width(lw)
 
     @property
     def model(self):
