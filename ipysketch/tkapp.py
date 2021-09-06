@@ -435,20 +435,24 @@ class LineWidthSlider(Canvas):
         self.draw()
 
     def on_button_down(self, event):
-        self.lw = int(event.x / self.width * 30) + 1
+        self.set(int(event.x / self.width * 30) + 1)
         self.draw()
 
     def on_move(self, event):
-        self.lw = int(event.x / self.width * 30) + 1
+        self.set(int(event.x / self.width * 30) + 1)
         self.draw()
 
     def on_button_up(self, event):
-        self.lw = int(event.x / self.width * 30) + 1
+        self.set(int(event.x / self.width * 30) + 1)
         self.draw()
         self.callback()
 
     def set(self, value):
         self.lw = value
+        if self.lw > 30:
+            self.lw = 30
+        if self.lw < 1:
+            self.lw = 1
         self.draw()
 
     def get(self):
@@ -458,7 +462,7 @@ class LineWidthSlider(Canvas):
         self.delete('all')
         posx = int((self.lw-1) / 30 * self.width)+2
         self.create_polygon((0, 14, self.width, 30, self.width, 2), fill='#000000')
-        self.create_rectangle((posx, 30, posx+4, 0), fill='#888888')
+        self.create_rectangle((posx, 28, posx+4, 0), fill='#888888')
 
 
 class SketchApp(object):
