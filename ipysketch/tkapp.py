@@ -67,10 +67,13 @@ class ToolbarButton(Canvas):
     SELECTED = 'selected'
     DISABLED = 'disabled'
 
-    def __init__(self, master, image, image_selected=None, image_active=None, image_disabled=None):
+    def __init__(self, master, image=None, image_selected=None, image_active=None, image_disabled=None):
         super(ToolbarButton, self).__init__(master, width=30, height=30)
 
-        self.image = self.create_icon(image, bg=(255, 255, 255))
+        if image:
+            self.image = self.create_icon(image, bg=(255, 255, 255))
+        else:
+            self.image = None
 
         if image_active:
             self.image_active = self.create_icon(image_active, bg=(255, 255, 255))
@@ -87,11 +90,6 @@ class ToolbarButton(Canvas):
         else:
             self.image_disabled = self.image
 
-#        self.label = Label(self)
-#        self.label.pack(side=LEFT, expand=YES, fill=BOTH)
-#        self.label.configure(image=self.image)
-
-        #self.label.bind('<Button-1>', self._exec_command)
         self.bind('<Button-1>', self._exec_command)
         self.state = ToolbarButton.NORMAL
 
@@ -171,8 +169,8 @@ class PenWidthPanel(Frame):
         self.button_3.bind('<Button-1>', self.handle)
         self.button_3.pack(side=LEFT, padx=2, pady=2)
 
+        self.button_1.state = ToolbarButton.SELECTED
         self._selected_btn = self.button_1
-        self._selected_btn.set_selected(True)
 
     @property
     def selected_button(self):
@@ -180,9 +178,9 @@ class PenWidthPanel(Frame):
 
     def handle(self, event):
         if event.widget != self._selected_btn:
-            self._selected_btn.set_selected(False)
+            self._selected_btn.state = ToolbarButton.NORMAL
             self._selected_btn = event.widget
-            self._selected_btn.set_selected(True)
+            self._selected_btn.state = ToolbarButton.SELECTED
             self.master.line_width_scale.set(self._selected_btn.line_width)
 
     def set_width(self, event):
@@ -190,28 +188,25 @@ class PenWidthPanel(Frame):
         self.selected_button.set_width(lw)
 
 
-class PenWidthButton(Canvas):
+class PenWidthButton(ToolbarButton):
 
     def __init__(self, master, lw):
-        super(PenWidthButton, self).__init__(master, width=30, height=30, relief=FLAT, bd=1)
-        self.master = master
         self.line_width = lw
-        self.is_selected = False
-        self.set_selected(False)
-        self.draw()
+        self.master = master
+        super(PenWidthButton, self).__init__(master)
+        self.state = ToolbarButton.NORMAL
 
     def set_width(self, lw):
         self.line_width = lw
-        self.draw()
+        self.state = self.state
 
-    def set_selected(self, yesno):
-        self.is_selected = yesno
-        self.draw()
-
-    def draw(self):
+    def set_selected_state(self):
         self.delete('all')
-        if self.is_selected:
-            self.create_rectangle((1, 1, 30, 30), width=1)
+        self.create_rectangle((1, 1, 30, 30), width=1)
+        self.create_line((0, 15, 30, 15), width=self.line_width)
+
+    def set_normal_state(self):
+        self.delete('all')
         self.create_line((0, 15, 30, 15), width=self.line_width)
 
 
@@ -232,7 +227,7 @@ class PenColorPanel(Frame):
         self.button_3.bind('<Button-1>', self.handle)
         self.button_3.pack(side=LEFT, padx=2, pady=2)
 
-        self.button_1.set_selected(True)
+        self.button_1.state = ToolbarButton.SELECTED
         self._selected_button = self.button_1
 
     @property
@@ -240,32 +235,30 @@ class PenColorPanel(Frame):
         return self._selected_button
 
     def handle(self, event):
-        self._selected_button.set_selected(False)
+        self._selected_button.state = ToolbarButton.NORMAL
         self._selected_button = event.widget
-        self._selected_button.set_selected(True)
+        self._selected_button.state = ToolbarButton.SELECTED
 
 
-class PenColorButton(Canvas):
+class PenColorButton(ToolbarButton):
 
     def __init__(self, master, color):
-        super(PenColorButton, self).__init__(master, width=30, height=30)
         self.color = color
-        self.set_selected(False)
+        super(PenColorButton, self).__init__(master)
+        self.state = ToolbarButton.NORMAL
 
-    def draw(self):
+    def set_selected_state(self):
         self.delete('all')
-        if self.is_selected:
-            self.create_rectangle((1, 1, 30, 30), width=1)
+        self.create_rectangle((1, 1, 30, 30), width=1)
         self.create_oval((8, 8, 22, 22), fill=self.color)
 
-    def set_selected(self, yesno):
-        self.is_selected = yesno
-        self.draw()
+    def set_normal_state(self):
+        self.delete('all')
+        self.create_oval((8, 8, 22, 22), fill=self.color)
 
     def set_color(self, color):
         self.color = color
-        self.draw()
-
+        self.state = self.state
 
 class Sketchpad(Canvas):
 
@@ -458,7 +451,8 @@ class SketchApp(object):
                 self.model = pickle.load(f)
             self.pad.draw_all()
 
-        self.mode = MODE_WRITE
+        #self.mode = MODE_WRITE
+        self.start_mode(MODE_WRITE)
         self.root.attributes('-topmost', True)
 
     def get_current_line_width(self):
