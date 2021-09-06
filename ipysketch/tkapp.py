@@ -30,10 +30,10 @@ class Toolbar(Frame):
         self.save_button = self.create_button('save-60.png')
         self.pen_button = self.create_button('pen-60.png')
         self.erase_button = self.create_button('eraser-60.png')
+        self.lasso_button = self.create_button('lasso-80.png')
         self.undo_button = self.create_button('undo-50.png')
         self.redo_button = self.create_button('redo-50.png')
 
-        self.lasso_button = self.create_button('lasso-80.png')
 
         self.color_panel = PenColorPanel(self)
         self.color_panel.pack(side=LEFT, padx=2, pady=2)
@@ -51,19 +51,6 @@ class Toolbar(Frame):
 
 
     def create_button(self, file):
-
-        #img = pkg_resources.resource_filename('ipysketch', 'assets/' + file)
-        #png = Image.open(img).convert('RGBA')
-        #background = Image.new('RGBA', png.size, (255, 255, 255))
-        #alpha_composite = Image.alpha_composite(background, png)
-        #img = alpha_composite.resize((30, 30), Image.ANTIALIAS)
-        #img = ImageTk.PhotoImage(img)
-
-        #button = Button(self, image=img, relief=RAISED)
-        #button.image = img
-        #button.pack(side=LEFT, padx=2, pady=2)
-        #return button
-
         button = ToolbarButton(self, file)
         button.pack(side=LEFT, padx=2, pady=2)
         return button
@@ -75,29 +62,97 @@ class Toolbar(Frame):
 
 class ToolbarButton(Canvas):
 
-    def __init__(self, master, file):
+    NORMAL = 'normal'
+    ACTIVE = 'active'
+    SELECTED = 'selected'
+    DISABLED = 'disabled'
+
+    def __init__(self, master, image, image_selected=None, image_active=None, image_disabled=None):
         super(ToolbarButton, self).__init__(master, width=30, height=30)
-        img = pkg_resources.resource_filename('ipysketch', 'assets/' + file)
+
+        self.image = self.create_icon(image, bg=(255, 255, 255))
+
+        if image_active:
+            self.image_active = self.create_icon(image_active, bg=(255, 255, 255))
+        else:
+            self.image_active = self.image
+
+        if image_selected:
+            self.image_selected = self.create_icon(image_selected, bg=(255, 255, 255))
+        else:
+            self.image_selected = self.image
+
+        if image_disabled:
+            self.image_disabled = self.create_icon(image_disabled, bg=(255, 255, 255))
+        else:
+            self.image_disabled = self.image
+
+#        self.label = Label(self)
+#        self.label.pack(side=LEFT, expand=YES, fill=BOTH)
+#        self.label.configure(image=self.image)
+
+        #self.label.bind('<Button-1>', self._exec_command)
+        self.bind('<Button-1>', self._exec_command)
+        self.state = ToolbarButton.NORMAL
+
+    def create_icon(self, image, bg=(255, 255, 255)):
+        img = pkg_resources.resource_filename('ipysketch', 'assets/' + image)
         png = Image.open(img).convert('RGBA')
-        background = Image.new('RGBA', png.size, (255, 255, 255))
+        background = Image.new('RGBA', png.size, bg)
         alpha_composite = Image.alpha_composite(background, png)
         img = alpha_composite.resize((30, 30), Image.ANTIALIAS)
         img = ImageTk.PhotoImage(img)
-        self.image = img
-
-        self.label = Label(self)
-        self.label.pack(side=LEFT, expand=YES, fill=BOTH)
-        self.label.configure(image=self.image)
-
-        self._active = False
-
-        self.label.bind('<Button-1>', self._exec_command)
+        return img
 
     def _exec_command(self, event):
         self.callback()
 
     def set_command(self, callback):
         self.callback = callback
+
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        if value == ToolbarButton.NORMAL:
+            self.set_normal_state()
+        elif value == ToolbarButton.ACTIVE:
+            self.set_active_state()
+        elif value == ToolbarButton.SELECTED:
+            self.set_selected_state()
+        elif value == ToolbarButton.DISABLED:
+            self.set_disabled_state()
+        else:
+            raise Exception('No such state')
+
+        self._state = value
+
+    def set_normal_state(self):
+        self.delete('all')
+        self._state = ToolbarButton.NORMAL
+        self.create_image(1, 1, anchor=NW, image=self.image)
+
+    def set_active_state(self):
+        pass
+
+    def set_selected_state(self):
+        self.delete('all')
+
+        self.create_image(1, 1, anchor=NW, image=self.image_selected)
+        self.create_rectangle((1, 1, 30, 30), width=1)
+        self._state = ToolbarButton.SELECTED
+
+    def set_disabled_state(self):
+        pass
+
+    def draw(self):
+        self.label = Label(self)
+        self.label.pack(side=LEFT, expand=YES, fill=BOTH)
+        self.label.configure(image=self.image)
+
+        self.create_line((0, 15, 30, 15), width=self.line_width)
 
 
 class PenWidthPanel(Frame):
@@ -487,22 +542,40 @@ class SketchApp(object):
 
     def set_write_mode(self):
         self.end_mode()
-        self.mode = MODE_WRITE
+        self.start_mode(MODE_WRITE)
 
     def set_erase_mode(self):
         self.end_mode()
-        self.mode = MODE_ERASE
+        self.start_mode(MODE_ERASE)
 
     def set_lasso_mode(self):
         self.end_mode()
-        self.mode = MODE_LASSO
+        self.start_mode(MODE_LASSO)
 
     def end_mode(self):
         if self.mode == MODE_LASSO:
             self.pad.selected_paths_uuids = []
             self.pad.draw_all()
+            self.toolbar.lasso_button.state = ToolbarButton.NORMAL
+        elif self.mode == MODE_WRITE:
+            self.toolbar.pen_button.state = ToolbarButton.NORMAL
+        elif self.mode == MODE_ERASE:
+            self.toolbar.erase_button.state = ToolbarButton.NORMAL
+        else:
+            raise Exception('No such state')
 
-    def choose_color(self, event):
+    def start_mode(self, mode):
+        self.mode = mode
+        if self.mode == MODE_LASSO:
+            self.toolbar.lasso_button.state = ToolbarButton.SELECTED
+        elif self.mode == MODE_WRITE:
+            self.toolbar.pen_button.state = ToolbarButton.SELECTED
+        elif self.mode == MODE_ERASE:
+            self.toolbar.erase_button.state = ToolbarButton.SELECTED
+        else:
+            raise Exception('No such state')
+
+    def choose_color(self):
         self.root.attributes('-topmost', False)
         color = colorchooser.askcolor(title='Choose color')
         if color != (None, None):
