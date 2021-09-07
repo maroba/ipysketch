@@ -4,7 +4,7 @@ A Python package for handwriting and sketching in Jupyter notebooks.
 
 ## Usage
 
-#### A movie is worth a thousand pictures is worth a millon words...
+#### A movie is worth a thousand pictures is worth a million words...
 
 ![Sketch Demo](res/demo.gif)
 
