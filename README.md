@@ -24,6 +24,15 @@ in the same folder as the Jupyter notebook in two files with ending `.isk` and `
 is the *ipysketch*-internal file format, the second is a PNG-representation of it, which is also 
 displayed in the notebook. 
 
+#### Using ipysketch without Jupyter
+
+The *ipysketch* GUI can also be used outside of Jupyter notebooks. To create a sketch named
+*mysketch* enter:
+
+```
+python -m ipysketch mysketch
+```
+
 ## Installation
 
 First, install the *ipysketch* package using *pip*:

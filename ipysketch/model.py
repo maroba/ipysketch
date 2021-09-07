@@ -2,6 +2,8 @@ from copy import deepcopy
 from shapely.geometry import Point as shPoint
 from shapely.geometry.polygon import Polygon
 import uuid
+from scipy.interpolate import interp1d
+import numpy as np
 
 
 class SketchModel(object):
@@ -132,6 +134,12 @@ class Pen(object):
     def clone(self):
         return Pen(self.width, self.color)
 
+    def __repr__(self):
+        repr = 'Line width: %d\n' % self.width
+        repr += 'Color: %s\n' % self.color
+        repr += 'Dash: %s\n\n' % self.dash
+        return repr
+
 
 class Point(object):
     """
@@ -257,6 +265,26 @@ class Path(object):
         p = Point((x, y))
         self.points.append(p)
 
+    def smoothed_points(self):
+        points = np.array([(p.x, p.y) for p in self.points])
+        xx = points[:, 0]
+        yy = points[:, 1]
+
+        sigma = [0.]
+
+        for i in range(1, len(xx)):
+            ds2 = (xx[i] - xx[i - 1]) ** 2 + (yy[i] - yy[i - 1]) ** 2
+            s = sigma[-1] + np.sqrt(ds2)
+            sigma.append(s)
+
+        xfunc = interp1d(sigma, xx, kind='cubic')
+        yfunc = interp1d(sigma, yy, kind='cubic')
+
+        sigma_dense = np.arange(0, sigma[-1], 1)
+        x_dense = xfunc(sigma_dense)
+        y_dense = yfunc(sigma_dense)
+        return [Point((x, y)) for x, y in zip(x_dense, y_dense)]
+
     def lines(self):
         """ Returns a list of line segments between the points in the path
 
@@ -318,6 +346,15 @@ class Path(object):
         for i, p in enumerate(self.points):
             self.points[i] = p + self.offset
         self.offset = Point((0, 0))
+
+    def __repr__(self):
+        repr = 'Path UUID: %s\n' % self.uuid
+        repr += 'Number of points: %d\n' % len(self.points)
+        repr += 'Pen: \n' + str(self.pen)
+        repr += 'Points: \n'
+        for p in self.points:
+            repr += str(p) + ', '
+        return repr
 
 
 def flatten(points):

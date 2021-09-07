@@ -581,11 +581,13 @@ class SketchApp(object):
         for path in self.model.paths:
             color = path.pen.color
             width = path.pen.width
-            radius = width // 2 - 1
-            for line in path.lines():
-                start, end = line
-                start = start - offset
-                end = end - offset
+            radius = width // 2 - 2
+
+            points = path.smoothed_points()
+
+            for i in range(1, len(points)):
+                start = points[i-1] - offset
+                end = points[i] - offset
 
                 if width > 2:
                     circle = Circle(start, radius)
@@ -597,8 +599,8 @@ class SketchApp(object):
                     clr = circle.lower_right()
                     draw.ellipse((cul.x, cul.y, clr.x, clr.y), fill=color)
 
-                draw.line([int(start.x), int(start.y),
-                           int(end.x), int(end.y)], fill=color, width=width)
+                draw.line([round(start.x), round(start.y),
+                           round(end.x), round(end.y)], fill=color, width=width)
 
         img.save(pathlib.Path.cwd() / (self.model.name + '.png'))
 
