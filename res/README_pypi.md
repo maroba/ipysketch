@@ -19,8 +19,4 @@ jupyter nbextension enable --py widgetsnbextension
 
 ## Usage
 
-In a Jupyter notebook:
-
-
-
-
+For usage instructions, please refer to the [github repository](https://github.com/maroba/ipysketch).

@@ -207,3 +207,10 @@ class Path(object):
         for i, p in enumerate(self.points):
             self.points[i] = p + self.offset
         self.offset = Point((0, 0))
+
+
+def flatten(points):
+    flat_list = []
+    for pt in points:
+        flat_list.extend([pt[0], pt[1]])
+    return tuple(flat_list)

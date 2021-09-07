@@ -32,7 +32,6 @@ class Sketch(DOMWidget):
         proc.wait()
         self.output.clear_output()
         self.close()
-        self.open()
 
         self.edit_button = Button(description='Edit')
         self.edit_button.on_click(self.handle_edit)
@@ -41,17 +40,17 @@ class Sketch(DOMWidget):
             self.img = Image.from_file(self.name + '.png')
         else:
             self.img = None
+        self.open()
 
         self.show()
 
     def open(self, **kwargs):
-#        super().open(**kwargs)
         self.edit_button.open()
         self.output.open()
-        self.img.open()
+        if self.img:
+            self.img.open()
 
     def close(self, **kwargs):
-#        super().close(**kwargs)
         self.edit_button.close()
         self.output.close()
         if self.img:
@@ -64,7 +63,3 @@ class Sketch(DOMWidget):
 
     def _ipython_display_(self, **kwargs):
         self.show(**kwargs)
-        #self.edit_button._ipython_display_(**kwargs)
-        #self.output._ipython_display_(**kwargs)
-        #if self.img:
-        #    self.img._ipython_display_(**kwargs)

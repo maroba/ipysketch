@@ -13,7 +13,7 @@ from tkinter import LEFT, TOP, X, FLAT, RAISED
 import pkg_resources
 import pathlib
 
-from ipysketch.model import Pen, SketchModel, Circle, Point, Vector, Path
+from ipysketch.model import Pen, SketchModel, Circle, Point, Vector, Path, flatten
 
 MODE_WRITE = 1
 MODE_ERASE = 2
@@ -47,15 +47,9 @@ class Toolbar(Frame):
         self.line_width_panel = PenWidthPanel(self)
         self.line_width_panel.pack(side=LEFT, padx=2, pady=2)
 
-        #self.line_width_scale = Scale(self, from_=1, to=30, orient=HORIZONTAL)
-        #self.line_width_scale.set(self.line_width_panel.selected_button.line_width)
-        #self.line_width_scale.bind('<ButtonRelease-1>', self.line_width_panel.set_width)
-        #self.line_width_scale.pack(side=LEFT, padx=2, pady=2)
-
         self.slider = LineWidthSlider(self)
         self.slider.pack(side=LEFT, padx=2)
         self.slider.bind('<ButtonRelease-1>', self.line_width_panel.set_width)
-
 
     def create_button(self, file):
         button = ToolbarButton(self, image=file)
@@ -190,7 +184,6 @@ class PenWidthPanel(Frame):
             self._selected_btn.state = ToolbarButton.NORMAL
             self._selected_btn = event.widget
             self._selected_btn.state = ToolbarButton.SELECTED
-            #self.master.line_width_scale.set(self._selected_btn.line_width)
             self.master.slider.set(self._selected_btn.line_width)
 
     def set_width(self, event):
@@ -270,6 +263,7 @@ class PenColorButton(ToolbarButton):
         self.color = color
         self.state = self.state
 
+
 class Sketchpad(Canvas):
 
     def __init__(self, parent, app, **kwargs):
@@ -306,7 +300,7 @@ class Sketchpad(Canvas):
             if self.selected_paths_uuids:
 
                 for path in self.app.model.filter_by_uuids(self.selected_paths_uuids):
-                    circle = Circle((event.x, event.y), 10)
+                    circle = Circle((event.x, event.y), 20)
                     if path.overlaps(circle):
                         self.current_action['type'] = 'transform'
                         self.current_action['start_point'] = Point((event.x, event.y))
@@ -357,7 +351,6 @@ class Sketchpad(Canvas):
             return
 
         if not self.current_action:
-#        if not self.app.mode == MODE_ERASE and not self.app.mode == MODE_LASSO:
             return
 
         if self.app.mode == MODE_WRITE:
@@ -371,7 +364,7 @@ class Sketchpad(Canvas):
             if self.current_action['type'] == 'select':
                 if self._lasso_path is not None:
                     self._lasso_path.add_point(event.x, event.y)
-                    self.draw_line(self._lasso_path.points[-2], self._lasso_path.points[-1],
+                    self.draw_line((self._lasso_path.points[-2], self._lasso_path.points[-1]),
                                    self._lasso_path.pen,
                                    dash=self._lasso_path.pen.dash)
                     return
@@ -385,7 +378,7 @@ class Sketchpad(Canvas):
     def _add_line(self):
         path = self.app.get_current_path()
         p_from, p_to = path.points[-2], path.points[-1]
-        self.draw_line((p_from.x, p_from.y), (p_to.x, p_to.y), path.pen)
+        self.draw_line((p_from.x, p_from.y, p_to.x, p_to.y), path.pen)
 
     def contains(self, event):
         w, h = self.get_size()
@@ -400,26 +393,36 @@ class Sketchpad(Canvas):
 
         for path in self.app.model.paths:
             if path.uuid in self.selected_paths_uuids:
-                for line in path.lines_flat():
-                    self.draw_line((line[0], line[1]), (line[2], line[3]), path.pen, color='#00FFFF', width=path.pen.width + 4, dash=(3, 5))
+                pts = path.points_flattened()
+                self.draw_line(pts, path.pen, color='#00FFFF', width=path.pen.width + 4, dash=(3, 5))
 
-            for line in path.lines_flat():
-                self.draw_line((line[0], line[1]), (line[2], line[3]), path.pen)
+            pts = path.points_flattened()
+            self.draw_line(pts, pen=path.pen)
 
         if self._lasso_path:
-            for line in self._lasso_path.lines_flat():
-                self.draw_line((line[0], line[1]), (line[2], line[3]), self._lasso_path.pen)
+            self.draw_line(self._lasso_path.points, self._lasso_path.pen)
 
-    def draw_line(self, start, end, pen, **kwargs):
+    def draw_line(self, points, pen, **kwargs):
 
         cfg = {
             'width': kwargs.get('width', pen.width),
             'fill': kwargs.get('color', pen.color),
             'dash': kwargs.get('dash', pen.dash),
-            'capstyle': ROUND
+            'capstyle': ROUND,
+            'smooth': 1,
+            'splinesteps': 16
         }
 
-        self.create_line((start[0], start[1], end[0], end[1]), cfg)
+        if not points:
+            return
+
+        if isinstance(points[0], Point):
+            points = flatten(points)
+
+        if len(points) < 4:
+            return
+
+        self.create_line(points, cfg)
 
 
 class LineWidthSlider(Canvas):
