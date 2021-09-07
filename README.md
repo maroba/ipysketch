@@ -6,6 +6,13 @@ A Python package for handwriting and sketching in Jupyter notebooks.
 
 ![Sketch Demo](res/demo.gif)
 
+#### Where are my sketches saved?
+
+When creating a `Sketch` instance, you give it a name, say *mysketch*. The sketch is then saved
+in the same folder as the Jupyter notebook in two files with ending `.isk` and `.png`. The first file 
+is the *ipysketch*-internal file format, the second is a PNG-representation of it, which is also 
+displayed in the notebook. 
+
 ## Installation
 
 First, install the *ipysketch* package using *pip*:
@@ -20,9 +27,6 @@ Then install and enable the widgets extension in Jupyter:
 jupyter nbextension install --user --py widgetsnbextension
 jupyter nbextension enable --py widgetsnbextension
 ```
-
-
-
 
 
 
