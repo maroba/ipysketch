@@ -29,7 +29,10 @@ setup(
                       'ipython',
                       'scikit-image',
                       'Pillow',
-                      'setuptools'
+                      'setuptools',
+                      'scipy',
+                      'Shapely',
+                      'numpy'
                       ],
     python_requires=">=3.6",
     classifiers=['Operating System :: OS Independent',
