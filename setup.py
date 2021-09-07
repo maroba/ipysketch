@@ -20,7 +20,7 @@ setup(
     packages=find_packages(),
     package_dir={name: name},
     include_package_data=True,
-    license='None',
+    license='GPLv3',
     description=description,
     long_description=open('res/README_pypi.md').read() if exists('README.md') else '',
     long_description_content_type="text/markdown",
