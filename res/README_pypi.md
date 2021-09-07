@@ -19,4 +19,12 @@ jupyter nbextension enable --py widgetsnbextension
 
 ## Usage
 
+![How to use](screenshot.jpg)
+
+- import ipysketch
+- create a `Sketch` instance and give the sketch a name
+- display the instance
+- click the edit button and make your sketch
+
+
 For usage instructions, please refer to the [github repository](https://github.com/maroba/ipysketch).

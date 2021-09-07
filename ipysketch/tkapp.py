@@ -1,19 +1,14 @@
 from tkinter import *
 from tkinter import ttk, colorchooser
 import os
-import re
-import sys
 
 import pickle
 from PIL import Image, ImageTk, ImageDraw
-from tkinter import Tk, Frame, Button
-
-from tkinter import LEFT, TOP, X, FLAT, RAISED
 
 import pkg_resources
 import pathlib
 
-from ipysketch.model import Pen, SketchModel, Circle, Point, Vector, Path, flatten
+from ipysketch.model import Pen, SketchModel, Circle, Point, Path, flatten
 
 MODE_WRITE = 1
 MODE_ERASE = 2
@@ -21,8 +16,16 @@ MODE_LASSO = 3
 
 
 class Toolbar(Frame):
+    """
+    The toolbar frame.
+    """
 
     def __init__(self, master, app):
+        """ Creates the toolbar and puts it into the parent widget.
+
+        :param master: parent frame
+        :param app: the app
+        """
         super().__init__(master, bd=0, relief=RAISED)
         self.parent = master
 
@@ -36,7 +39,6 @@ class Toolbar(Frame):
         self.lasso_button = self.create_button('lasso-80.png')
         self.undo_button = self.create_button('undo-50.png')
         self.redo_button = self.create_button('redo-50.png')
-
 
         self.color_panel = PenColorPanel(self)
         self.color_panel.pack(side=LEFT, padx=2, pady=2)
@@ -95,7 +97,7 @@ class ToolbarButton(Canvas):
         self.state = ToolbarButton.NORMAL
 
     def create_icon(self, image, bg=(255, 255, 255)):
-        img = pkg_resources.resource_filename('ipysketch', 'assets/' + image)
+        img = pkg_resources.resource_filename('ipysketch', os.path.join('assets', image))
         png = Image.open(img).convert('RGBA')
         background = Image.new('RGBA', png.size, bg)
         alpha_composite = Image.alpha_composite(background, png)
@@ -410,7 +412,7 @@ class Sketchpad(Canvas):
             'dash': kwargs.get('dash', pen.dash),
             'capstyle': ROUND,
             'smooth': 1,
-            'splinesteps': 16
+            'splinesteps': 12
         }
 
         if not points:

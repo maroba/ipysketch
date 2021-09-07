@@ -5,8 +5,17 @@ import uuid
 
 
 class SketchModel(object):
+    """
+    Represents the data of a complete sketch
+    """
 
     def __init__(self, name):
+        """
+        Initializes a sketch.
+
+        :param name: (str) Name of the sketch. Is used as file basename.
+
+        """
         self.paths = []
         self.name = name
         self.dirty = True
@@ -15,23 +24,52 @@ class SketchModel(object):
         return deepcopy(self)
 
     def start_path(self, x, y, pen):
+        """ Add a new path to the model.
+
+        :param x: starting point x-coordinate
+        :param y: starting point y-coordinate
+        :param pen: the Pen object to use
+        :return:
+        """
         path = Path(pen)
         path.add_point(x, y)
         self.paths.append(path)
 
     @property
     def current_path(self):
+        """ Returns the latest added path.
+
+        :return: Path
+        """
         if self.paths:
             return self.paths[-1]
 
     def add_to_path(self, x, y):
+        """ Adds a point to the currently active path.
+
+        :param x: x-coordinate
+        :param y: y-coordinate
+        :return:
+        """
         if self.current_path:
             self.current_path.add_point(x, y)
 
     def remove(self, path):
+        """ Remove a path from the sketch.
+
+        :param path: Path object to remove
+        :return:
+        """
         self.paths.remove(path)
 
     def find_paths(self, x, y, radius):
+        """ Find all paths in the sketch that cross circle around given point.
+
+        :param x: x-coordinate of the point
+        :param y: y-coordinate of the point
+        :param radius: radius of the circle
+        :return: list of found Path objects
+        """
         found = []
         circle = Circle((x, y), radius)
         for p in self.paths:
@@ -42,9 +80,12 @@ class SketchModel(object):
         return found
 
     def clear(self):
+        """ Clears the sketch of all paths """
         self.paths = []
 
     def get_bounding_box(self):
+        """ Get a bounding box around the actual sketched objects."""
+
         minx, miny = 1E9, 1E9
         maxx, maxy = -1E9, -1E9
         for path in self.paths:
@@ -60,15 +101,30 @@ class SketchModel(object):
         return Point((minx, miny)), Point((maxx, maxy))
 
     def filter_by_uuids(self, uuids):
+        """ Filter the paths in the model by a list of UUIDs
+
+        :param uuids: list of (str)-UUIDs
+        :return: list of Path objects
+        """
+
         filtered = []
         for path in self.paths:
             if path.uuid in uuids:
                 filtered.append(path)
         return filtered
 
+
 class Pen(object):
+    """
+    Class representing the pen used for drawing.
+    """
 
     def __init__(self, width=1, color='#000000'):
+        """
+
+        :param width: width of the pen (int)
+        :param color: color of the pen (6 digit hex-valued code as str)
+        """
         self.width = width
         self.color = color
         self.dash = None
@@ -78,8 +134,19 @@ class Pen(object):
 
 
 class Point(object):
+    """
+    Represents a point in the sketch.
+    """
 
     def __init__(self, *args):
+        """
+        Initializes Point.
+
+        :param args: either a 2-tuple with x and y coordinates or
+                x and y coordinate separately
+
+        Points can be added and subtracted as well as be multiplied by numbers.
+        """
         self.xy = list(*args)
 
     @property
@@ -128,27 +195,49 @@ class Point(object):
 
 
 class Vector(Point):
+    """
+    Just an alias for Point.
+    """
     def __init__(self, *args):
         super(Vector, self).__init__(*args)
 
 
 class Circle(object):
+    """
+    Utility class for some circle operations.
+    """
 
     def __init__(self, center, radius):
         self.center = center
         self.radius = radius
 
     def contains(self, point):
+        """ Check if a point is inside the circle.
+
+        :param point: the Point object to check
+        :return: True or False
+        """
         return (self.center[0] - point[0])**2 + (self.center[1] - point[1])**2 < self.radius**2
 
     def upper_left(self):
+        """ Returns the upper left corner of the bounding box of the circle.
+
+        :return: Point
+        """
         return Point((self.center[0] - self.radius, self.center[1] - self.radius))
 
     def lower_right(self):
+        """ Returns the lower right corner of the bounding box of the circle.
+
+        :return: Point
+        """
         return Point((self.center[0] + self.radius, self.center[1] + self.radius))
 
 
 class Path(object):
+    """
+    Representation of a continuous path.
+    """
 
     def __init__(self, pen=None):
         if not pen:
@@ -159,11 +248,20 @@ class Path(object):
         self.offset = Point((0, 0))
 
     def add_point(self, x, y):
+        """ Add a point to the end of the path
+
+        :param x: x-coordinate
+        :param y: y-coordinate
+        :return:
+        """
         p = Point((x, y))
         self.points.append(p)
 
     def lines(self):
-        '''Enumerate lines in path'''
+        """ Returns a list of line segments between the points in the path
+
+        :return: list of Point 2-tuples
+        """
         lines = []
         for i in range(1, len(self.points)):
             line = self.points[i-1], self.points[i]
@@ -171,6 +269,10 @@ class Path(object):
         return lines
 
     def lines_flat(self):
+        """ Same as lines(self), but with the Point objects flattened to x, y
+
+        :return: list of coordinates (x0, y0, x1, y1, x2, y2, ...)
+        """
         lines = []
         points = [p + self.offset for p in self.points]
         for i in range(1, len(points)):
@@ -186,6 +288,13 @@ class Path(object):
         return tuple(flat_list)
 
     def contains(self, point):
+        """ Treating the path as closed (connecting first an last points), check if point is contained in
+            resulting polygon.
+
+        :param point: Point
+        :return:
+        """
+
         # Close path creating a polygon
         try:
             pt = shPoint(point.x, point.y)
@@ -195,6 +304,11 @@ class Path(object):
             pass
 
     def overlaps(self, circle):
+        """ Check if the path overlaps with a circle.
+
+        :param circle: Circle
+        :return:
+        """
         for pt in self.points:
             if circle.contains(pt):
                 return True
