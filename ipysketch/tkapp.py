@@ -26,7 +26,7 @@ class Toolbar(Frame):
         :param master: parent frame
         :param app: the app
         """
-        super().__init__(master, bd=0, relief=RAISED)
+        super().__init__(master, bd=0, relief=RAISED, bg='white')
         self.parent = master
 
         self.app = app

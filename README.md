@@ -51,4 +51,7 @@ jupyter nbextension enable --py widgetsnbextension
 ```
 
 
+## Compatibility
+
+*ipysketch* require Python 3.
 
