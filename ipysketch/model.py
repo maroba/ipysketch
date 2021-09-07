@@ -45,9 +45,6 @@ class SketchModel(object):
         self.paths = []
 
     def get_bounding_box(self):
-        # TODO: Make this dynamic later to fit the image size to the actual sketch boundaries
-        # Idea: find the bounding box for the sketch, then save only the content of the bounding box
-        #       as an image
         minx, miny = 1E9, 1E9
         maxx, maxy = -1E9, -1E9
         for path in self.paths:
