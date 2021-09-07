@@ -5,11 +5,6 @@ import sys
 from ipywidgets import Button, Image, Output, DOMWidget
 from IPython.display import display
 
-# IMPORTANT:
-#
-#    jupyter nbextension install --user --py widgetsnbextension
-#    jupyter nbextension enable --py widgetsnbextension
-#
 
 class Sketch(DOMWidget):
 
@@ -18,6 +13,10 @@ class Sketch(DOMWidget):
         self.edit_button = Button(description='Edit')
         self.edit_button.on_click(self.handle_edit)
         self.output = Output()
+        self.img = None
+        self.load_image(name)
+
+    def load_image(self, name):
         if os.path.exists(name + '.png'):
             self.img = Image.from_file(name + '.png')
         else:
@@ -36,10 +35,7 @@ class Sketch(DOMWidget):
         self.edit_button = Button(description='Edit')
         self.edit_button.on_click(self.handle_edit)
         self.output = Output()
-        if os.path.exists(self.name + '.png'):
-            self.img = Image.from_file(self.name + '.png')
-        else:
-            self.img = None
+        self.load_image(self.name)
         self.open()
 
         self.show()
