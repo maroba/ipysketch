@@ -1,5 +1,7 @@
 # ipysketch
 
+[![PyPI version](https://badge.fury.io/py/ipysketch.svg)](https://badge.fury.io/py/ipysketch)
+
 A Python package for handwriting and sketching in Jupyter notebooks.
 
 ## Usage
