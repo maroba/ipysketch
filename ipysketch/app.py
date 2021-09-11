@@ -41,7 +41,7 @@ class Application(tk.Tk):
 
     def create_toolbar(self):
         frame = tk.Frame(self, border=3)
-        frame.grid(row=0, column=0, sticky='WE', ipady=3, ipadx=3)
+        frame.grid(row=0, column=0, sticky='WE')
         self.dirty = ObjectVar()
         self.dirty.set(False)
         SaveButton(frame, self.dirty, self.save).pack(side=tk.LEFT)
