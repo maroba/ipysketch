@@ -1,4 +1,5 @@
 from copy import deepcopy
+import uuid
 
 from shapely.geometry import Point as shPoint
 from shapely.geometry.polygon import Polygon
@@ -62,8 +63,7 @@ class SketchModel(object):
 
     def erase_paths(self, paths):
         for path in paths:
-            if path in self.paths:
-                self.paths.remove(path)
+            self.remove(path)
 
     def start_lasso(self, point):
         self.lasso = Lasso()
@@ -100,12 +100,18 @@ class SketchModel(object):
 
         return Rectangle(Point(minx, miny), Point(maxx, maxy))
 
+    def remove(self, path):
+        for p in self.paths:
+            if p.uuid == path.uuid:
+                self.paths.remove(p)
+
 
 class Path(object):
 
     def __init__(self, pen=None):
         self.pen = pen or Pen()
         self.points = []
+        self.uuid = str(uuid.uuid4())
 
     def clone(self):
         return deepcopy(self)

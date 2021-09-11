@@ -29,6 +29,7 @@ class SketchCanvas(tk.Canvas):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.config(cursor='crosshair')
 
     def draw(self, model, selection=None, transform=None):
 
