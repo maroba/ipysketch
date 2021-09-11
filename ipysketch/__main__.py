@@ -1,5 +1,5 @@
 import sys
-from ipysketch.tkapp import main
+from ipysketch.app import main
 
 if __name__ == '__main__':
     try:
