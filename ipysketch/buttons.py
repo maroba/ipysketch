@@ -56,6 +56,7 @@ class ColorButton(SelectableButton):
         self.color.register_user(self)
 
     def draw_interior(self):
+        self.create_rectangle((1, 1, ICON_SIZE, ICON_SIZE), fill='#FFFFFF', outline='#FFFFFF')
         self.create_oval((5, 5, ICON_SIZE - 2, ICON_SIZE - 2), fill=self.color.get())
 
 
@@ -67,6 +68,7 @@ class LineWidthButton(SelectableButton):
         self.lw.register_user(self)
 
     def draw_interior(self):
+        self.create_rectangle((0, 0, ICON_SIZE, ICON_SIZE), fill='#FFFFFF', outline='#FFFFFF')
         self.create_line((0, ICON_SIZE // 2, ICON_SIZE, ICON_SIZE // 2), fill='black', width=self.lw.get())
 
 
@@ -75,10 +77,10 @@ class ImageButtonMixin(object):
     def __init__(self, image_map):
         self.images = {key: self.prepare_image(value) for key, value in image_map.items()}
 
-    def prepare_image(self, image):
+    def prepare_image(self, image, background='#FFFFFF'):
         image_path = pkg_resources.resource_filename('ipysketch', os.path.join('assets', image))
         png = Image.open(image_path).convert('RGBA')
-        background = Image.new('RGBA', png.size, (255, 255, 255))
+        background = Image.new('RGBA', png.size, background)
         alpha_composite = Image.alpha_composite(background, png)
         img = alpha_composite.resize((ICON_SIZE, ICON_SIZE), Image.ANTIALIAS)
         return ImageTk.PhotoImage(img)

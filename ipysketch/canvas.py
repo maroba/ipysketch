@@ -30,8 +30,8 @@ class SketchCanvas(tk.Canvas):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-
     def draw(self, model, selection=None, transform=None):
+
         selection = selection or []
         self.delete('all')
 
