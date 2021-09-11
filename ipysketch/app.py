@@ -40,7 +40,7 @@ class Application(tk.Tk):
         self.canvas_controller = CanvasController(self, frame)
 
     def create_toolbar(self):
-        frame = tk.Frame(self)
+        frame = tk.Frame(self, border=3)
         frame.grid(row=0, column=0, sticky='WE', ipady=3, ipadx=3)
         self.dirty = ObjectVar()
         self.dirty.set(False)
