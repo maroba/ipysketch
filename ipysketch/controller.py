@@ -153,16 +153,10 @@ class CanvasController(object):
 
         at_point = Point(event.x, event.y)
         if action == ACTION_DRAW:
-            self.model.selection = []
-            self.app.trigger_dirty()
-            pen = self.app.pen
-            self.model.start_path(at_point, pen)
+            self._start_action_draw(at_point)
         elif action == ACTION_ERASE:
             self.model.selection = []
-            paths_to_erase = filter_paths(self.model.paths, at_point, radius=20)
-            if paths_to_erase:
-                self.app.trigger_dirty()
-                self.model.erase_paths(paths_to_erase)
+            self.erase_paths(at_point)
         elif action == ACTION_LASSO:
             if self.model.selection:
                 if filter_paths(self.model.selection, at_point):
@@ -175,6 +169,12 @@ class CanvasController(object):
             raise NotImplementedError
 
         self.canvas.draw(self.model)
+
+    def _start_action_draw(self, at_point):
+        self.model.selection = []
+        self.app.trigger_dirty()
+        pen = self.app.pen
+        self.model.start_path(at_point, pen)
 
     def on_move(self, event):
 
