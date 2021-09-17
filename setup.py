@@ -9,7 +9,7 @@ description = 'Handwriting and sketching in Jupyter notebooks'
 name = 'ipysketch'
 year = '2021'
 url = 'https://github.com/maroba/ipysketch'
-version = '0.2.1'
+version = '0.2.2'
 
 setup(
     name=name,
