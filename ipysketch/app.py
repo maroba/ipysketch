@@ -145,6 +145,6 @@ def main(name):
     png = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.png'))
     png = Image.open(png) #.convert('RGBA')
     app.iconphoto(True, ImageTk.PhotoImage(png))
-
+    app.title('ipysketch ' + name)
     app.mainloop()
 
