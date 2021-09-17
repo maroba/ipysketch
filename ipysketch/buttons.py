@@ -1,7 +1,6 @@
 import os
 import tkinter as tk
 from tkinter import ttk
-from tkinter.commondialog import Dialog
 
 import pkg_resources
 from PIL import Image, ImageTk

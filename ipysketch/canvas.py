@@ -51,6 +51,8 @@ class SketchCanvas(tk.Canvas):
             self.create_line(points, fill=path.pen.color, smooth=True, width=path.pen.width, tag=path.uuid)
 
     def delete_paths(self, *paths):
+        if isinstance(paths[0], list):
+            paths = paths[0]
         for p in paths:
             self.delete(p.uuid)
 

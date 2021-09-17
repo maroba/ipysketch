@@ -216,8 +216,10 @@ class CanvasController(object):
 
     def erase_paths(self, at_point):
         paths_to_erase = filter_paths(self.model.paths, at_point, radius=20)
-        self.canvas.delete(paths_to_erase)
+
+        #self.canvas.update()
         if paths_to_erase:
+            self.canvas.delete_paths(paths_to_erase)
             self.app.trigger_dirty()
             self.model.erase_paths(paths_to_erase)
 
@@ -229,6 +231,7 @@ class CanvasController(object):
             self.canvas.update_paths(self.model.paths[-1])
         elif action == ACTION_ERASE:
             self.erase_paths(at_point)
+            #self.canvas.draw(self.model)
         elif action == ACTION_LASSO:
             if self.transform:
                 self.finish_transform(at_point)

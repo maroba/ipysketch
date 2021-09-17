@@ -1,9 +1,10 @@
 import tkinter as tk
+import pkg_resources
 
 import pickle
 import os
 import io
-from PIL import Image
+from PIL import Image, ImageTk
 
 from ipysketch.controller import ColorButtonGroupController, ActionButtonGroupController, \
     CanvasController, LineWidthButtonGroupController
@@ -139,6 +140,11 @@ def main(name):
     app = Application(name)
     app.wait_visibility()
     app.attributes('-topmost', False)
+    icon = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.ico'))
+    app.iconbitmap(icon)
+    png = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.png'))
+    png = Image.open(png) #.convert('RGBA')
+    app.iconphoto(True, ImageTk.PhotoImage(png))
 
     app.mainloop()
 
