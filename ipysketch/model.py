@@ -272,8 +272,9 @@ def filter_paths(paths, at_point, radius=20):
 
 class Translation(object):
 
-    def __init__(self, origin):
+    def __init__(self, origin, destination=None):
         self.origin = origin
+        self.destination = destination
 
 
 def flatten(points):

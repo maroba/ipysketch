@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from ipysketch.model import flatten, Pen
+from ipysketch.model import flatten, Pen, Point
 
 ICON_SIZE = 30
 
@@ -28,7 +28,8 @@ class ObjectVar(object):
 class SketchCanvas(tk.Canvas):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self._scroll_region = (-1500, -1500, 1500, 1500)
+        super().__init__(*args, scrollregion=self._scroll_region, **kwargs)
         self.config(cursor='crosshair')
 
     def update_paths(self, *paths, transform=None, selected=False):
@@ -95,4 +96,23 @@ class SketchCanvas(tk.Canvas):
             path = selected_path
         return path
 
+    def shift(self, translation):
+        W = self._scroll_region[2] - self._scroll_region[0]
+        H = self._scroll_region[3] - self._scroll_region[1]
+        xv , yv = self.xview(), self.yview()
 
+        delta = translation.destination - translation.origin
+
+        dxv0 = -delta.x / W
+        dyv0 = -delta.y / H
+
+        xv_new_0 = xv[0] + dxv0
+        yv_new_0 = yv[0] + dyv0
+
+        self.xview_moveto(xv_new_0)
+        self.yview_moveto(yv_new_0)
+        translation.origin = translation.destination
+        translation.destination = None
+
+    def origin(self):
+        return Point(self.canvasx(0), self.canvasy(0))

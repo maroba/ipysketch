@@ -81,6 +81,8 @@ class Application(tk.Tk):
             return ACTION_ERASE
         elif selected == 2:
             return ACTION_LASSO
+        elif selected == 3:
+            return ACTION_MOVE
         else:
             raise Exception('No such mode')
 

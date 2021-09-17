@@ -48,12 +48,13 @@ class ButtonGroupController(object):
 class ActionButtonGroupController(ButtonGroupController):
 
     def __init__(self, frame):
-        super().__init__(frame, 3)
+        super().__init__(frame, 4)
 
     def init_buttons(self, frame):
         self.buttons = [ActionButton(frame, self.onoffvars[0], 'pen-60.png', self.on_button_click),
                         ActionButton(frame, self.onoffvars[1], 'eraser-60.png', self.on_button_click),
-                        ActionButton(frame, self.onoffvars[2], 'lasso-80.png', self.on_button_click)
+                        ActionButton(frame, self.onoffvars[2], 'lasso-80.png', self.on_button_click),
+                        ActionButton(frame, self.onoffvars[3], 'move-60.png', self.on_button_click)
                         ]
 
 
@@ -138,6 +139,7 @@ class CanvasController(object):
 
         self.model.selection = []
         self.transform = None
+        self.canvas_shift = None
 
         self.update_canvas()
 
@@ -151,7 +153,7 @@ class CanvasController(object):
     def on_button_down(self, event):
         action = self.app.action
 
-        at_point = Point(event.x, event.y)
+        at_point = Point(event.x, event.y) + self.canvas.origin()
         if action == ACTION_DRAW:
             self._start_action_draw(at_point)
         elif action == ACTION_ERASE:
@@ -165,10 +167,19 @@ class CanvasController(object):
                     self.model.selection = []
             else:
                 self.model.start_lasso(at_point)
+        elif action == ACTION_MOVE:
+            self._start_canvas_shift(Point(event.x, event.y))
         else:
             raise NotImplementedError
 
         self.canvas.draw(self.model)
+
+    def _start_canvas_shift(self, at_point):
+        self.canvas_shift = Translation(at_point)
+
+    def _continue_canvas_shift(self, at_point):
+        self.canvas_shift.destination = at_point
+        self.canvas.shift(self.canvas_shift)
 
     def _start_action_draw(self, at_point):
         self.model.selection = []
@@ -179,7 +190,7 @@ class CanvasController(object):
     def on_move(self, event):
 
         action = self.app.action
-        at_point = Point(event.x, event.y)
+        at_point = Point(event.x, event.y) + self.canvas.origin()
 
         if action == ACTION_DRAW:
 
@@ -198,7 +209,8 @@ class CanvasController(object):
             elif self.model.lasso:
                 self.model.continue_lasso(at_point)
                 self.canvas.update_paths(self.model.lasso)
-
+        elif action == ACTION_MOVE:
+            self._continue_canvas_shift(Point(event.x, event.y))
         else:
             raise NotImplementedError
 
@@ -211,9 +223,9 @@ class CanvasController(object):
 
     def on_button_up(self, event):
         action = self.app.action
-        at_point = Point(event.x, event.y)
+        at_point = Point(event.x, event.y) + self.canvas.origin()
         if action == ACTION_DRAW:
-            self.model.finish_path(Point(event.x, event.y))
+            self.model.finish_path(Point(event.x, event.y) + self.canvas.origin())
             self.canvas.update_paths(self.model.paths[-1])
         elif action == ACTION_ERASE:
             self.erase_paths(at_point)
@@ -225,6 +237,8 @@ class CanvasController(object):
                 self.canvas.delete_paths(self.model.lasso)
                 self.model.finish_lasso(at_point)
                 self.canvas.update_paths(self.model.selection, selected=True)
+        elif action == ACTION_MOVE:
+            pass
         else:
             raise NotImplementedError
 
