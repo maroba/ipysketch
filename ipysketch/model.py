@@ -270,7 +270,11 @@ def filter_paths(paths, at_point, radius=20):
     return found_paths
 
 
-class Translation(object):
+class Transformation(object):
+    pass
+
+
+class Translation(Transformation):
 
     def __init__(self, origin, destination=None):
         self.origin = origin

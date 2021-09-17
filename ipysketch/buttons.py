@@ -15,7 +15,7 @@ class ToolbarButton(tk.Canvas):
         self.callback = callback
         super(ToolbarButton, self).__init__(parent, width=ICON_SIZE, height=ICON_SIZE, *args, **kwargs)
         self.bind('<Button-1>', callback)
-        self.variable.register_user(self)
+        self.variable.register(self)
 
     def update(self):
         self.draw()
@@ -29,6 +29,9 @@ class ToolbarButton(tk.Canvas):
 
 
 class SelectableButton(ToolbarButton):
+    """
+    A toolbar button that can be marked as selected by drawing or removing an outline
+    """
 
     def __init__(self, parent, onoff, callback=None, *args, **kwargs):
         self.onoff = onoff
@@ -48,11 +51,14 @@ class SelectableButton(ToolbarButton):
 
 
 class ColorButton(SelectableButton):
+    """
+    The buttons for color selection.
+    """
 
     def __init__(self, parent, onoff, color, callback=None, *args, **kwargs):
         self.color = color
         super().__init__(parent, onoff, callback, *args, **kwargs)
-        self.color.register_user(self)
+        self.color.register(self)
 
     def draw_interior(self):
         self.create_rectangle((1, 1, ICON_SIZE, ICON_SIZE), fill='#FFFFFF', outline='#FFFFFF')
@@ -60,11 +66,14 @@ class ColorButton(SelectableButton):
 
 
 class LineWidthButton(SelectableButton):
+    """
+    The buttons for line width selection.
+    """
 
     def __init__(self, parent, onoff, lw, callback=None, *args, **kwargs):
         self.lw = lw
         super().__init__(parent, onoff, callback, *args, **kwargs)
-        self.lw.register_user(self)
+        self.lw.register(self)
 
     def draw_interior(self):
         self.create_rectangle((0, 0, ICON_SIZE, ICON_SIZE), fill='#FFFFFF', outline='#FFFFFF')
@@ -72,6 +81,9 @@ class LineWidthButton(SelectableButton):
 
 
 class ImageButtonMixin(object):
+    """
+    A mixin class to draw an image in the interior of a ToolbarButton
+    """
 
     def __init__(self, image_map):
         self.images = {key: self.prepare_image(value) for key, value in image_map.items()}
@@ -139,6 +151,7 @@ class SaveButton(SimpleIconButton):
 
 
 class LineWidthChooserDialog(tk.Toplevel):
+    """ The dialog for choosing the line width."""
 
     def __init__(self, parent, initial_lw=2, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -169,6 +182,9 @@ class LineWidthChooserDialog(tk.Toplevel):
 
 
 class LineWidthChooser(tk.Canvas):
+    """
+    The custom slider widget for choosing the line width.
+    """
 
     def __init__(self, parent, init_width, *args, **kwargs):
         self.width = 200
