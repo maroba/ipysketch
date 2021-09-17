@@ -45,7 +45,7 @@ class SelectableButton(ToolbarButton):
 
     def draw_outline(self):
         if self.onoff.get():
-            self.create_rectangle((0, 0, ICON_SIZE, ICON_SIZE), outline='black')
+            self.create_rectangle((0, 0, ICON_SIZE+2, ICON_SIZE+2), outline='black')
 
 
 class ColorButton(SelectableButton):
@@ -101,7 +101,7 @@ class ActionButton(SelectableButton, ImageButtonMixin):
         self.draw()
 
     def draw_interior(self):
-        self.create_image(1, 1, anchor=tk.NW, image=self.images['normal'])
+        self.create_image(3, 3, anchor=tk.NW, image=self.images['normal'])
 
 
 class SimpleIconButton(ToolbarButton, ImageButtonMixin):
