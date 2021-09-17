@@ -43,6 +43,7 @@ class SketchModel(object):
     def __init__(self):
         self.paths = []
         self.lasso = None
+        self.selection = []
 
     def clone(self):
         return deepcopy(self)
@@ -80,7 +81,7 @@ class SketchModel(object):
             if self.lasso.contains(path):
                 selection.append(path)
         self.lasso = None
-        return selection
+        self.selection = selection
 
     def bbox(self):
 

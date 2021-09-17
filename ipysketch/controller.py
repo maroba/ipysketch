@@ -136,7 +136,7 @@ class CanvasController(object):
         self.canvas.bind('<B1-Motion>', self.on_move)
         self.canvas.bind('<ButtonRelease-1>', self.on_button_up)
 
-        self.selection = []
+        self.model.selection = []
         self.transform = None
 
         self.update_canvas()
@@ -153,22 +153,22 @@ class CanvasController(object):
 
         at_point = Point(event.x, event.y)
         if action == ACTION_DRAW:
-            self.selection = []
+            self.model.selection = []
             self.app.trigger_dirty()
             pen = self.app.pen
             self.model.start_path(at_point, pen)
         elif action == ACTION_ERASE:
-            self.selection = []
+            self.model.selection = []
             paths_to_erase = filter_paths(self.model.paths, at_point, radius=20)
             if paths_to_erase:
                 self.app.trigger_dirty()
                 self.model.erase_paths(paths_to_erase)
         elif action == ACTION_LASSO:
-            if self.selection:
-                if filter_paths(self.selection, at_point):
+            if self.model.selection:
+                if filter_paths(self.model.selection, at_point):
                     self.start_transform(at_point)
                 else:
-                    self.selection = []
+                    self.model.selection = []
             else:
                 self.model.start_lasso(at_point)
         else:
@@ -177,45 +177,56 @@ class CanvasController(object):
         self.canvas.draw(self.model)
 
     def on_move(self, event):
+
         action = self.app.action
         at_point = Point(event.x, event.y)
+
         if action == ACTION_DRAW:
+
             self.model.continue_path(at_point)
+            self.canvas.update_paths(self.model.paths[-1])
+
         elif action == ACTION_ERASE:
-            paths_to_erase = filter_paths(self.model.paths, at_point, radius=20)
-            if paths_to_erase:
-                self.app.trigger_dirty()
-                self.model.erase_paths(paths_to_erase)
+
+            self.erase_paths(at_point)
+
         elif action == ACTION_LASSO:
+
             if self.transform:
                 self.continue_transform(at_point)
+                self.canvas.update_paths(self.model.selection, transform=self.transform)
             elif self.model.lasso:
                 self.model.continue_lasso(at_point)
+                self.canvas.update_paths(self.model.lasso)
+
         else:
             raise NotImplementedError
 
-        self.canvas.draw(self.model, self.selection, transform=self.transform)
+    def erase_paths(self, at_point):
+        paths_to_erase = filter_paths(self.model.paths, at_point, radius=20)
+        self.canvas.delete(paths_to_erase)
+        if paths_to_erase:
+            self.app.trigger_dirty()
+            self.model.erase_paths(paths_to_erase)
 
     def on_button_up(self, event):
         action = self.app.action
         at_point = Point(event.x, event.y)
         if action == ACTION_DRAW:
             self.model.finish_path(Point(event.x, event.y))
+            self.canvas.update_paths(self.model.paths[-1])
         elif action == ACTION_ERASE:
-            paths_to_erase = filter_paths(self.model.paths, at_point, radius=20)
-            if paths_to_erase:
-                self.app.trigger_dirty()
-                self.model.erase_paths(paths_to_erase)
+            self.erase_paths(at_point)
         elif action == ACTION_LASSO:
             if self.transform:
                 self.finish_transform(at_point)
                 self.app.trigger_dirty()
             elif self.model.lasso:
-                self.selection = self.model.finish_lasso(at_point)
+                self.canvas.delete_paths(self.model.lasso)
+                self.model.finish_lasso(at_point)
+                self.canvas.update_paths(self.model.selection, selected=True)
         else:
             raise NotImplementedError
-
-        self.canvas.draw(self.model, self.selection, self.transform)
 
     def start_transform(self, at_point):
         self.transform = Translation(at_point)
@@ -225,6 +236,8 @@ class CanvasController(object):
 
     def finish_transform(self, at_point):
         self.transform.destination = at_point
-        for path in self.selection:
+        for path in self.model.selection:
             path.translate(self.transform.destination - self.transform.origin)
+
         self.transform = None
+        self.canvas.draw(self.model, self.model.selection)

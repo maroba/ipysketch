@@ -31,6 +31,28 @@ class SketchCanvas(tk.Canvas):
         super().__init__(*args, **kwargs)
         self.config(cursor='crosshair')
 
+    def update_paths(self, *paths, transform=None, selected=False):
+
+        if isinstance(paths[0], list):
+            paths = paths[0]
+
+        for path in paths:
+            if transform:
+                path = self.apply_transform(path, transform)
+            self.delete(path.uuid)
+            points = flatten(path.points)
+            if selected:
+                pen = Pen(width=path.pen.width + 4, color='#00FFFF')
+                if len(points) == 2:
+                    points = (points[0], points[1], points[0], points[1])
+                self.create_line(points, fill=pen.color, smooth=True, width=pen.width, tag=path.uuid)
+
+            self.create_line(points, fill=path.pen.color, smooth=True, width=path.pen.width, tag=path.uuid)
+
+    def delete_paths(self, *paths):
+        for p in paths:
+            self.delete(p.uuid)
+
     def draw(self, model, selection=None, transform=None):
 
         selection = selection or []
@@ -43,7 +65,8 @@ class SketchCanvas(tk.Canvas):
             pen = Pen(width=path.pen.width+4, color='#00FFFF')
             if len(points) == 2:
                 points = (points[0], points[1], points[0], points[1])
-            self.create_line(points, fill=pen.color, smooth=True, width=pen.width)
+
+            self.create_line(points, fill=pen.color, smooth=True, width=pen.width, tag=path.uuid)
 
         for path in model.paths:
 
@@ -54,7 +77,7 @@ class SketchCanvas(tk.Canvas):
             pen = path.pen
             if len(points) == 2:
                 points = (points[0], points[1], points[0], points[1])
-            self.create_line(points, fill=pen.color, smooth=True, width=pen.width)
+            self.create_line(points, fill=pen.color, smooth=True, width=pen.width, tag=path.uuid)
 
         lasso = model.lasso
         if lasso:
@@ -62,7 +85,7 @@ class SketchCanvas(tk.Canvas):
             pen = lasso.pen
             if len(points) == 2:
                 points = (points[0], points[1], points[0], points[1])
-            self.create_line(points, fill=pen.color, smooth=True, width=pen.width, dash=pen.dash)
+            self.create_line(points, fill=pen.color, smooth=True, width=pen.width, dash=pen.dash, tag=path.uuid)
 
     def apply_transform(self, selected_path, transform):
         if transform:
