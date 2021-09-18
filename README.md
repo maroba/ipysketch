@@ -45,13 +45,7 @@ jupyter nbextension enable --py widgetsnbextension
 
 #### Set up development environment
 
-Clone the repository
-
-```
-git clone https://github.com/maroba/ipysketch.git
-```
-
-Then install the package in development mode:
+First clone or fork the repository. Then install the package in development mode:
 
 ```
 pip install -e .
