@@ -2,7 +2,7 @@ name: Checks
 
 on:
   push:
-    branches: [ main ]
+    branches: [ never ]
 
 jobs:
   build:
@@ -10,8 +10,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.7', '3.8']
-        os: [macos-latest]
+        python-version: ['3.7', '3.9']
+        os: [macos-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v2
