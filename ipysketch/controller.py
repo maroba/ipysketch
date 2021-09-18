@@ -18,12 +18,18 @@ class ButtonGroupController(object):
             btn.pack(side=tk.LEFT)
 
     def init_buttons(self):
+        """Must be implemented by child classes"""
         raise NotImplementedError
 
     def init_onoffvars(self, num_buttons):
         self.onoffvars = [ObjectVar() for _ in range(num_buttons)]
 
     def set(self, idx):
+        """ Activates the button by its index in the group
+
+        :param idx: the index of the button
+        :return:
+        """
         for k, btn in enumerate(self.buttons):
             self.onoffvars[k].set(False)
         self.onoffvars[idx].set(True)
@@ -35,6 +41,10 @@ class ButtonGroupController(object):
                 self.onoffvars[k].set(True)
 
     def get_selected(self):
+        """ Returns a tuple indicating which button in the group is active.
+
+        :return: tuple (index, Button)
+        """
         for i, btn in enumerate(self.buttons):
             if self.onoffvars[i].get():
                 return i, btn
@@ -46,9 +56,10 @@ class ButtonGroupController(object):
 
 
 class ActionButtonGroupController(ButtonGroupController):
+    """Controller for the action buttons 'draw', 'erase', 'lasso' and 'shift'"""
 
     def __init__(self, frame):
-        super().__init__(frame, 4)
+        super().__init__(frame, num_buttons=4)
 
     def init_buttons(self, frame):
         self.buttons = [ActionButton(frame, self.onoffvars[0], 'pen-60.png', self.on_button_click),
@@ -59,10 +70,11 @@ class ActionButtonGroupController(ButtonGroupController):
 
 
 class ColorButtonGroupController(ButtonGroupController):
+    """Controller for the panel with the color selection buttons."""
 
     def __init__(self, frame):
         self.colorvars = [ObjectVar() for _ in range(3)]
-        super().__init__(frame, 3)
+        super().__init__(frame, num_buttons=3)
 
     def init_buttons(self, frame):
 
@@ -104,6 +116,12 @@ class LineWidthButtonGroupController(ButtonGroupController):
             self.lwvars[k].set(lw)
 
     def on_button_click(self, event):
+        """ When a unselected line width button is clicked, select it. If it is already
+            selected, show the dialog for choosing a new line width.
+
+        :param event:
+        :return:
+        """
         onoff = self.get_onoff(event.widget)
         if onoff.get():
             lwc = LineWidthChooserDialog(self.app)
@@ -219,9 +237,8 @@ class CanvasController(object):
             raise NotImplementedError
 
     def erase_paths(self, at_point):
-        paths_to_erase = filter_paths(self.model.paths, at_point, radius=20)
+        paths_to_erase = filter_paths(self.model.paths, at_point, radius=7)
 
-        #self.canvas.update()
         if paths_to_erase:
             self.canvas.delete_paths(paths_to_erase)
             self.app.trigger_dirty()
@@ -235,7 +252,6 @@ class CanvasController(object):
             self.canvas.update_paths(self.model.paths[-1])
         elif action == ACTION_ERASE:
             self.erase_paths(at_point)
-            #self.canvas.draw(self.model)
         elif action == ACTION_LASSO:
             if self.transform:
                 self.finish_transform(at_point)

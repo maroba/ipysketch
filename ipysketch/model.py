@@ -1,5 +1,7 @@
 from copy import deepcopy
 import uuid
+from numpy import sqrt, arange
+from scipy.interpolate import interp1d
 
 from shapely.geometry import Point as shPoint
 from shapely.geometry.polygon import Polygon
@@ -61,6 +63,7 @@ class SketchModel(object):
     def finish_path(self, point):
         path = self.paths[-1]
         path.append(point)
+        self._optimize_path(path)
 
     def erase_paths(self, paths):
         for path in paths:
@@ -106,6 +109,32 @@ class SketchModel(object):
             if p.uuid == path.uuid:
                 self.paths.remove(p)
 
+    def _optimize_path(self, path):
+
+        if len(path.points) <= 4:
+            return
+
+        xvalues = [p.x for p in path.points][:-1]
+        yvalues = [p.y for p in path.points][:-1]
+
+        sigma = [0.]
+        for i in range(1, len(path.points)-1):
+            p0 = path.points[i - 1]
+            p1 = path.points[i]
+            dist = sqrt((p1.x - p0.x) ** 2 + (p1.y - p0.y) ** 2)
+            sigma.append(sigma[-1] + dist)
+
+        xfit = interp1d(sigma, xvalues, kind='cubic')
+        yfit = interp1d(sigma, yvalues, kind='cubic')
+
+        sigma_dense = arange(0, sigma[-1], 1.)
+        points = []
+        for s in sigma_dense:
+            p = Point(xfit(s), yfit(s))
+            points.append(p)
+
+        path.points = points
+
 
 class Path(object):
 
@@ -128,7 +157,7 @@ class Path(object):
 class Lasso(Path):
 
     def __init__(self):
-        pen = Pen(dash=(5,3))
+        pen = Pen(dash=(5, 3))
         super().__init__(pen)
 
     def contains(self, path):
@@ -242,7 +271,7 @@ class Circle(object):
         :param point: the Point object to check
         :return: True or False
         """
-        return (self.center[0] - point[0])**2 + (self.center[1] - point[1])**2 < self.radius**2
+        return (self.center[0] - point[0]) ** 2 + (self.center[1] - point[1]) ** 2 < self.radius ** 2
 
     def upper_left(self):
         """ Returns the upper left corner of the bounding box of the circle.
