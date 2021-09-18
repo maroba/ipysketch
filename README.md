@@ -50,8 +50,44 @@ jupyter nbextension install --user --py widgetsnbextension
 jupyter nbextension enable --py widgetsnbextension
 ```
 
+## Development
+
+#### Set up development environment
+
+Clone the repository
+
+```
+git clone https://github.com/maroba/ipysketch.git
+```
+
+Then install the package in development mode:
+
+```
+pip install -e .
+```
+
+#### Running the tests
+
+```
+python -m unittest discover test
+```
+
+### Running test coverage
+
+If not already installed:
+
+```
+pip install coverage
+```
+
+Then 
+
+```
+coverage run --source=ipysketch setup.py test
+coverage report -m
+```
 
 ## Compatibility
 
-*ipysketch* require Python 3.
+*ipysketch* requires Python 3.
 
