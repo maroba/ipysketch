@@ -155,7 +155,6 @@ class Application(tk.Tk):
 
         ps = self._canvas_to_postscript_cropped()
         img = Image.open(io.BytesIO(ps.encode('utf-8')))
-        img = self._postscript_to_png(img)
         img.save(png_name)
 
         self.dirty.set(False)

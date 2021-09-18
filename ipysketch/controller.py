@@ -147,6 +147,10 @@ class CanvasController(object):
     def model(self):
         return self.app.model
 
+    @property
+    def selection(self):
+        return self.model.selection
+
     def update_canvas(self):
         self.canvas.draw(self.model)
 
