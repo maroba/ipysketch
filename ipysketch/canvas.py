@@ -15,14 +15,19 @@ class ObjectVar(object):
         self._value = None
 
     def register(self, user):
+        """Register an observer that is notified whenever the value changes.
+           Observers must implement the update() function.
+        """
         if user not in self._users:
             self._users.append(user)
             user.update()
 
     def get(self):
+        """Get the current value."""
         return self._value
 
     def set(self, value):
+        """Set the current value."""
         self._value = value
         for user in self._users:
             user.update()
@@ -73,7 +78,7 @@ class SketchCanvas(tk.Canvas):
             self.delete(p.uuid)
 
     def draw(self, model, selection=None, transform=None):
-        """ Redraw the complete model
+        """ Redraw the complete model.
 
         :param model: the model instance
         :param selection: the list of paths that shall be drawn as selected
@@ -86,23 +91,15 @@ class SketchCanvas(tk.Canvas):
 
         for selected_path in selection:
             path = self.apply_transform(selected_path, transform)
-
             points = flatten(path.points)
             pen = Pen(width=path.pen.width+4, color='#00FFFF')
-            if len(points) == 2:
-                points = (points[0], points[1], points[0], points[1])
-
             self.create_line(points, fill=pen.color, smooth=True, width=pen.width, tag=path.uuid)
 
         for path in model.paths:
-
             if path in selection:
                 path = self.apply_transform(path, transform)
-
             points = flatten(path.points)
             pen = path.pen
-            if len(points) == 2:
-                points = (points[0], points[1], points[0], points[1])
             self.create_line(points, fill=pen.color, smooth=True, width=pen.width, tag=path.uuid)
 
         lasso = model.lasso

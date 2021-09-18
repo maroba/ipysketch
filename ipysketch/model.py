@@ -285,4 +285,6 @@ def flatten(points):
     flat_list = []
     for pt in points:
         flat_list.extend([pt[0], pt[1]])
+    if len(flat_list) == 2:
+        flat_list += flat_list
     return tuple(flat_list)
