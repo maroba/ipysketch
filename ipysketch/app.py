@@ -21,6 +21,8 @@ class Application(tk.Tk):
         super().__init__(*args, **kwargs)
 
         # The name of the sketch. Used as basename for the image files.
+        if not name:
+            raise Exception('No sketch name given.')
         self.name = name
 
         self.history = self._create_model_history()
@@ -28,6 +30,15 @@ class Application(tk.Tk):
         self._create_toolbar()
         self._create_canvas()
         self._configure_window()
+
+        self.wait_visibility()
+        self.attributes('-topmost', False)
+        icon = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.ico'))
+        self.iconbitmap(icon)
+        png = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.png'))
+        png = Image.open(png)
+        self.iconphoto(True, ImageTk.PhotoImage(png))
+        self.title('ipysketch ' + name)
 
     def _configure_window(self):
         self.rowconfigure(0, weight=0)
@@ -143,14 +154,11 @@ class Application(tk.Tk):
             return
 
         ps = self._canvas_to_postscript_cropped()
-        img = self._postscript_to_png(ps)
+        img = Image.open(io.BytesIO(ps.encode('utf-8')))
+        img = self._postscript_to_png(img)
         img.save(png_name)
 
         self.dirty.set(False)
-
-    def _postscript_to_png(self, ps):
-        img = Image.open(io.BytesIO(ps.encode('utf-8')))
-        return img
 
     def _canvas_to_postscript_cropped(self):
         bbox = self.model.bbox()
@@ -180,13 +188,5 @@ class Application(tk.Tk):
 def main(name):
     """ The main function to start the app. """
     app = Application(name)
-    app.wait_visibility()
-    app.attributes('-topmost', False)
-    icon = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.ico'))
-    app.iconbitmap(icon)
-    png = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.png'))
-    png = Image.open(png)
-    app.iconphoto(True, ImageTk.PhotoImage(png))
-    app.title('ipysketch ' + name)
     app.mainloop()
 
