@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from os.path import exists
+from os.path import exists, realpath, dirname
+import sys
 from setuptools import setup, find_packages
 
 author = 'Matthias Baer'
@@ -11,13 +12,15 @@ year = '2021'
 url = 'https://github.com/maroba/ipysketch'
 version = '0.2.2'
 
+sys.path.insert(0, realpath(dirname(__file__))+"/"+name)
+
 setup(
     name=name,
     author=author,
     author_email=email,
     url=url,
     version=version,
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests",)),
     package_dir={name: name},
     include_package_data=True,
     license='GPLv3',
@@ -38,5 +41,7 @@ setup(
     classifiers=['Operating System :: OS Independent',
                  'Programming Language :: Python :: 3',
                  ],
+    setup_requires=["pytest-runner"],
+    tests_require=["pytest"],
     platforms=['ALL'],
 )
