@@ -10,15 +10,6 @@ A Python package for handwriting and sketching in Jupyter notebooks.
 
 ![Sketch Demo](res/demo.gif)
 
-#### But sometimes it's too fast, so...
-
-- import ipysketch
-- create a `Sketch` instance and give the sketch a name
-- display the instance
-- edit the sketch
-
-![howto](res/screenshot.jpg)
-
 #### Where are my sketches saved?
 
 When creating a `Sketch` instance, you give it a name, say *mysketch*. The sketch is then saved
