@@ -134,22 +134,32 @@ class Application(tk.Tk):
             pickle.dump(self.canvas_controller.model, f)
 
         png_name = os.path.join(os.curdir, self.name + '.png')
+        # If an empty model shall be saved, we should delete the PNG
+        # so that the Jupyter cell does not display an obsolete version:
         if len(self.model.paths) == 0:
             if os.path.exists(png_name):
                 os.remove(png_name)
             self.dirty.set(False)
             return
 
+        ps = self._canvas_to_postscript_cropped()
+        img = self._postscript_to_png(ps)
+        img.save(png_name)
+
+        self.dirty.set(False)
+
+    def _postscript_to_png(self, ps):
+        img = Image.open(io.BytesIO(ps.encode('utf-8')))
+        return img
+
+    def _canvas_to_postscript_cropped(self):
         bbox = self.model.bbox()
         w = bbox.lr.x - bbox.ul.x
         h = bbox.lr.y - bbox.ul.y
         ps = self.canvas_controller.canvas.postscript(colormode='color',
-                                                      x=bbox.ul.x-20, y=bbox.ul.y-20,
-                                                      width=w+40, height=h+40)
-        img = Image.open(io.BytesIO(ps.encode('utf-8')))
-        img.save(png_name)
-
-        self.dirty.set(False)
+                                                      x=bbox.ul.x - 20, y=bbox.ul.y - 20,
+                                                      width=w + 40, height=h + 40)
+        return ps
 
     def undo(self, event):
         """Callback for the undo button."""
