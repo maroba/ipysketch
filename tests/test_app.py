@@ -155,7 +155,6 @@ class TestApplication(unittest.TestCase):
             self.app.action_controller.buttons[2].event_generate('<Button-1>')
 
 
-
 def mouse_action(canvas, points_flat):
     canvas.event_generate('<Button-1>', x=points_flat[0], y=points_flat[1])
     for i in range(2, len(points_flat)-2, 2):
