@@ -3,6 +3,7 @@ import pkg_resources
 
 import pickle
 import os
+import sys
 import io
 from PIL import Image, ImageTk
 
@@ -34,10 +35,11 @@ class Application(tk.Tk):
         self.wait_visibility()
         self.attributes('-topmost', False)
         icon = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.ico'))
-        self.iconbitmap(icon)
+        if sys.platform.startswith('win'):
+            self.iconbitmap(icon)
         png = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.png'))
         png = Image.open(png)
-        self.iconphoto(True, ImageTk.PhotoImage(png))
+        self.iconphoto(False, ImageTk.PhotoImage(png))
         self.title('ipysketch ' + name)
 
     def _configure_window(self):
