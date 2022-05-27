@@ -39,7 +39,7 @@ class Application(tk.Tk):
             self.iconbitmap(icon)
         png = pkg_resources.resource_filename('ipysketch', os.path.join('assets', 'logo.png'))
         png = Image.open(png)
-        self.iconphoto(True, ImageTk.PhotoImage(png))
+        self.iconphoto(False, ImageTk.PhotoImage(png))
         self.title('ipysketch ' + name)
 
     def _configure_window(self):
