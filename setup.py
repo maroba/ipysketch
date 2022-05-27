@@ -23,6 +23,7 @@ setup(
     packages=find_packages(exclude=("tests",)),
     package_dir={name: name},
     include_package_data=True,
+    package_data={name:['assets/*']},
     license='GPLv3',
     description=description,
     long_description=open('res/README_pypi.md').read() if exists('README.md') else '',
